@@ -188,6 +188,20 @@ function publicState(room,player){
 function sseWrite(res,obj){try{res.write('data: '+JSON.stringify(obj)+'\n\n');}catch{}}
 function sendState(room){for(const player of room.players){const r=streams.get(player.token);if(r) sseWrite(r, publicState(room,player));}}
 function cancelTimers(room){clearTimeout(room.roundTimer);clearTimeout(room.nextTimer);room.roundTimer=null;room.nextTimer=null;}
+function closeRoom(room){
+  cancelTimers(room);
+  for(const player of room.players){
+    const stream=streams.get(player.token);
+    if(stream){
+      sseWrite(stream,{type:'room_closed',reason:'The host ended this game.',usedFamilies:[...room.used]});
+      streams.delete(player.token);
+      try{stream.end();}catch{}
+    }
+    sessions.delete(player.token);
+  }
+  rooms.delete(room.code);
+}
+
 function endRound(room,winner=null){
   if(room.phase!=='playing')return;
   clearTimeout(room.roundTimer);
@@ -259,11 +273,26 @@ async function handle(req,res){
     const room=rooms.get(key);if(!room)return fail(res,'Room not found. Double-check the code.');
     if(room.players.length>=MAX_PLAYERS)return fail(res,`Room is full — maximum ${MAX_PLAYERS} players.`);
     if(room.phase!=='lobby')return fail(res,'This game has already started.');
-    const tok=token(),player={id:`P${room.players.length+1}`,name,token:tok,score:0,wins:0,online:false,lastGuess:0};
+    const nextId=Math.max(0,...room.players.map(p=>Number(p.id.slice(1))||0))+1;
+    const tok=token(),player={id:`P${nextId}`,name,token:tok,score:0,wins:0,online:false,lastGuess:0};
     room.players.push(player);sessions.set(tok,key);sendState(room);return reply(res,{ok:true,token:tok,state:publicState(room,player)});
   }
   const p=playerFor(b.token);if(!p)return fail(res,'Session expired. Create or join another room.',401);
   const {room,player}=p;
+  if(pathname==='/api/cancel'){
+    if(player.id!==room.host)return fail(res,'Only the host can cancel the whole game.',403);
+    closeRoom(room);
+    return reply(res,{ok:true});
+  }
+  if(pathname==='/api/leave'){
+    if(player.id===room.host)return fail(res,'The host must cancel the game to leave.',403);
+    const liveStream=streams.get(player.token);
+    if(liveStream){streams.delete(player.token);try{liveStream.end();}catch{}}
+    sessions.delete(player.token);
+    room.players=room.players.filter(p=>p.token!==player.token);
+    sendState(room);
+    return reply(res,{ok:true});
+  }
   if(pathname==='/api/start'){
     if(player.id!==room.host)return fail(res,'Only the host can start a game.');
     if(room.players.length<2)return fail(res,'Invite at least one other player first.');
