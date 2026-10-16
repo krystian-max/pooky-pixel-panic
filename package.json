@@ -1,0 +1,9 @@
+{
+  "name": "pooky-pixel-panic",
+  "version": "1.0.0",
+  "description": "A real-time two-player Pooky product guessing game",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "scripts": { "start": "node server.js" },
+  "license": "UNLICENSED"
+}
