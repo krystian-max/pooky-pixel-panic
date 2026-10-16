@@ -5,7 +5,12 @@ const toastNode=$('#toast');
 const storageKey='pooky-pixel-panic-session';
 const usedKey='pooky-pixel-panic-used-products';
 function storedUsed(){try{const arr=JSON.parse(localStorage.getItem(usedKey)||'[]');return Array.isArray(arr)?arr.filter(v=>typeof v==='string').slice(0,500):[];}catch{return [];}}
-function rememberFinishedGame(){if(state?.phase!=='finished'||!Array.isArray(state.usedFamilies))return;const all=new Set([...storedUsed(),...state.usedFamilies]);localStorage.setItem(usedKey,JSON.stringify([...all]));}
+function persistUsed(families){
+  if(!Array.isArray(families))return;
+  const all=new Set([...storedUsed(),...families]);
+  localStorage.setItem(usedKey,JSON.stringify([...all]));
+}
+function rememberFinishedGame(){if(state?.phase==='finished')persistUsed(state.usedFamilies);}
 const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const pad=n=>String(Math.max(0,n)).padStart(2,'0');
 let token=null, state=null, source=null, lastView='', lastRoundKey='', lastActivityKey='', timerHandle=null, toastTimeout=null, paintCount=-1;
@@ -30,13 +35,39 @@ function connectEvents(){
   if(source){source.close();source=null;}
   if(!token)return;
   source=new EventSource('/api/events?token='+encodeURIComponent(token));
-  source.onmessage=(event)=>{try{const newState=JSON.parse(event.data);const oldPhase=state?.phase,oldRound=state?.round,oldCount=state?.players?.length,oldGame=state?.gameId;state=newState;rememberFinishedGame();render(!oldPhase||oldPhase!==state.phase||oldRound!==state.round||oldCount!==state.players.length||oldGame!==state.gameId);}catch(e){console.warn(e);}};
+  source.onmessage=(event)=>{try{
+    const newState=JSON.parse(event.data);
+    if(newState.type==='room_closed'){
+      persistUsed(newState.usedFamilies);
+      resetToHome();
+      toast('The host ended the game. You can start or join a new one.');
+      return;
+    }
+    const oldPhase=state?.phase,oldRound=state?.round,oldCount=state?.players?.length,oldGame=state?.gameId;
+    state=newState;
+    rememberFinishedGame();
+    render(!oldPhase||oldPhase!==state.phase||oldRound!==state.round||oldCount!==state.players.length||oldGame!==state.gameId);
+  }catch(e){console.warn(e);}};
   source.onerror=()=>{/* EventSource automatically reconnects after brief network interruptions. */};
 }
 function resetToHome(){
   if(source){source.close();source=null;}
-  token=null;state=null;localStorage.removeItem(storageKey);lastView='';lastRoundKey='';
+  token=null;state=null;localStorage.removeItem(storageKey);lastView='';lastRoundKey='';lastActivityKey='';
   history.replaceState(null,'','/');render(true);
+}
+async function leaveCurrentRoom(){
+  if(!state)return;
+  const isHost=state.you===state.host;
+  if(isHost&&!window.confirm('Cancel this game for everyone and return to the main menu?'))return;
+  if(isHost){
+    await api('cancel');
+    resetToHome();
+    toast('Game cancelled. Back to the main menu.');
+  }else{
+    await api('leave');
+    resetToHome();
+    toast('You left the game. Back to the main menu.');
+  }
 }
 function introMarkup(){
   const maybeCode=new URLSearchParams(location.search).get('room')||'';
@@ -104,7 +135,7 @@ function endMarkup(){
     <p class="stock-note">${state.remaining} previously unseen products left in this catalogue. Rematches never reuse a product name until you explicitly reset the history.</p>
     ${youHost?`${hasNext?'<button id="play-again" class="btn btn-primary" style="font-size:16px;padding:17px 28px">Play again with 10 NEW products ↗</button>':'<p class="limit-note">Fewer than 10 new products remain, so a repeat-free rematch is unavailable.</p>'} <button id="reset-used" class="btn btn-white" style="margin-left:8px">Reset product history & allow repeats</button>`:'<p style="font-size:14px">Waiting for the host to start a rematch...</p>'}
     <div class="history"><h3>The round-by-round results</h3>${state.results.map(r=>`<div class="history-row"><span>ROUND ${r.round}</span><strong>${escapeHtml(r.answer)}</strong><span>${r.winner?'🏅 '+escapeHtml(r.winner):'No winner'}</span></div>`).join('')}</div>
-    <button class="btn btn-white" id="leave-game" style="margin-top:26px">Exit game</button></section>`;
+    <button class="btn btn-white exit-room-button" style="margin-top:26px">${youHost?'Cancel game & return to menu':'Leave game & return to menu'}</button></section>`;
 }
 
 function render(force=false){
@@ -117,11 +148,16 @@ function render(force=false){
   else if(view==='lobby')app.innerHTML=lobbyMarkup();
   else if(view==='finished')app.innerHTML=endMarkup();
   else {app.innerHTML=gameMarkup();mountImage();}
+  if(state){
+    const isHost=state.you===state.host;
+    app.insertAdjacentHTML('afterbegin',`<nav class="session-toolbar" aria-label="Game controls"><span class="session-label">Room ${escapeHtml(state.code)}</span><button type="button" class="btn btn-white exit-room-button">${isHost?'✕ Cancel game & return to menu':'← Leave game & return to menu'}</button></nav>`);
+  }
   attachEvents(view);
   if(view==='game'&&state.phase==='playing')$('#guess-input')?.focus({preventScroll:true});
   updateClock();
 }
 function attachEvents(view){
+  document.querySelectorAll('.exit-room-button').forEach(button=>{button.onclick=()=>safe(leaveCurrentRoom);});
   if(view==='intro'){
     $('#create-form').onsubmit=e=>{e.preventDefault();const n=$('#nickname').value.trim();safe(async()=>setRoom(await api('create',{name:n,seen:storedUsed()})));};
     $('#join-form').onsubmit=e=>{e.preventDefault();const n=$('#nickname').value.trim(),code=$('#room-input').value.trim();safe(async()=>setRoom(await api('join',{name:n,code})));};
@@ -145,7 +181,6 @@ function attachEvents(view){
   }
   if(view==='finished'){
     const again=$('#play-again');if(again)again.onclick=()=>safe(async()=>{await api('start');});
-    $('#leave-game').onclick=resetToHome;
   }
 }
 async function copy(text){try{await navigator.clipboard.writeText(text);toast('Copied to clipboard ✓');}catch{window.prompt('Copy this:',text);}}
