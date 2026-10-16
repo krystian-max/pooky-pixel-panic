@@ -3,6 +3,9 @@ const $ = (sel,root=document) => root.querySelector(sel);
 const app=$('#app');
 const toastNode=$('#toast');
 const storageKey='pooky-pixel-panic-session';
+const usedKey='pooky-pixel-panic-used-products';
+function storedUsed(){try{const arr=JSON.parse(localStorage.getItem(usedKey)||'[]');return Array.isArray(arr)?arr.filter(v=>typeof v==='string').slice(0,500):[];}catch{return [];}}
+function rememberFinishedGame(){if(state?.phase!=='finished'||!Array.isArray(state.usedFamilies))return;const all=new Set([...storedUsed(),...state.usedFamilies]);localStorage.setItem(usedKey,JSON.stringify([...all]));}
 const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const pad=n=>String(Math.max(0,n)).padStart(2,'0');
 let token=null, state=null, source=null, lastView='', lastRoundKey='', lastActivityKey='', timerHandle=null, toastTimeout=null, paintCount=-1;
@@ -20,14 +23,14 @@ function setRoom(result){
   token=result.token;
   localStorage.setItem(storageKey,token);
   state=result.state;
-  connectEvents();render(true);
+  rememberFinishedGame();connectEvents();render(true);
   if(state.code){history.replaceState(null,'',`/?room=${encodeURIComponent(state.code)}`);}
 }
 function connectEvents(){
   if(source){source.close();source=null;}
   if(!token)return;
   source=new EventSource('/api/events?token='+encodeURIComponent(token));
-  source.onmessage=(event)=>{try{const newState=JSON.parse(event.data);const oldPhase=state?.phase,oldRound=state?.round,oldCount=state?.players?.length,oldGame=state?.gameId;state=newState;render(!oldPhase||oldPhase!==state.phase||oldRound!==state.round||oldCount!==state.players.length||oldGame!==state.gameId);}catch(e){console.warn(e);}};
+  source.onmessage=(event)=>{try{const newState=JSON.parse(event.data);const oldPhase=state?.phase,oldRound=state?.round,oldCount=state?.players?.length,oldGame=state?.gameId;state=newState;rememberFinishedGame();render(!oldPhase||oldPhase!==state.phase||oldRound!==state.round||oldCount!==state.players.length||oldGame!==state.gameId);}catch(e){console.warn(e);}};
   source.onerror=()=>{/* EventSource automatically reconnects after brief network interruptions. */};
 }
 function resetToHome(){
@@ -41,8 +44,8 @@ function introMarkup(){
     <section class="hero-copy">
       <div class="eyebrow">THE ULTIMATE LIGHTING SHOWDOWN</div>
       <h1>Pixel<br><span class="orange">Panic!</span></h1>
-      <p>Know your Trindle from your Twinky? Race a colleague to name the Pooky product before the pixels disappear.</p>
-      <div class="hero-features"><span class="pill">✦ 10 rounds</span><span class="pill">◷ 60 seconds</span><span class="pill">◈ 2 players, 1 winner</span></div>
+      <p>Know your Trindle from your Twinky? Race your colleagues to name the Pooky product before the pixels disappear.</p>
+      <div class="hero-features"><span class="pill">✦ 10 rounds</span><span class="pill">◷ 60 seconds</span><span class="pill">◈ Up to 20 players</span></div>
       <div class="form-panel">
         <h3>Ready to play?</h3><p class="subtle">No password needed. Just a nickname and a room code.</p>
         <form id="create-form"><div class="form-row"><input class="field" id="nickname" aria-label="Your nickname" placeholder="Your nickname" maxlength="24" minlength="2" autocomplete="nickname" required/><button class="btn btn-primary" type="submit">Create game <span>↗</span></button></div></form>
@@ -57,23 +60,25 @@ function introMarkup(){
 }
 function lobbyMarkup(){
   const youHost=state.you===state.host;
-  const full=state.players.length===2;
+  const full=state.players.length>=state.maxPlayers;
+  const canStart=state.players.length>=2&&state.remaining>=10;
   return `<section class="lobby"><div class="lobby-heading"><div class="eyebrow">YOUR GAME IS READY</div><h1>Bring on the <span style="color:var(--orange)">rivalry.</span></h1><p>Share your room code and get guessing.</p></div>
     <div class="lobby-grid"><div class="panel">
       <div class="panel-label">YOUR PRIVATE GAME CODE</div><div class="room-code">${escapeHtml(state.code)}</div>
       <div class="lobby-actions"><button class="btn btn-primary" id="copy-invite">↗ Copy invite link</button><button class="btn btn-white" id="copy-code">Copy code</button></div>
-      <p class="room-note">Send the link to your colleague. They enter a nickname and join from their own device. Both of you will see the same round and timer.</p>
-      <div class="hint-card"><strong>✦ How to win</strong><br>Every five seconds, one new piece of the photo snaps into focus. Type the <b>product family name</b> (e.g. “Trindle”). The first correct answer wins the round. Earlier guesses earn more points!</div>
-    </div><div class="panel"><div class="panel-label">PLAYERS · ${state.players.length}/2</div><h2>In the room</h2>
-      <div class="players-list">${state.players.map((p,i)=>`<div class="player-entry"><span class="avatar p${i+1}">${escapeHtml(p.name.slice(0,1).toUpperCase())}</span><div class="player-meta"><b>${escapeHtml(p.name)} ${state.you===p.id?'(you)':''}</b><span>${i===0?'Game host':'Challenger'}</span></div><span class="online ${p.online?'':'waiting'}">${p.online?'● READY':'CONNECTING'}</span></div>`).join('')}
-      ${!full?`<div class="player-entry" style="border:2px dashed #ddd0c8;background:#fff"><span class="avatar" style="background:#f1ebeb;color:#b3a6a7">?</span><div class="player-meta"><b>Waiting for player 2</b><span>Send the invite link...</span></div><span class="online waiting">◌ EMPTY</span></div>`:''}</div>
-      ${youHost?`<button class="btn btn-dark" id="start-game" ${full?'':'disabled'} style="width:100%">${full?'Let’s play! →':'Waiting for your colleague...'}</button>`:`<button class="btn btn-dark" disabled style="width:100%">The host will start the game...</button>`}
-      <p class="statusline">${state.catalogueLoading?'⏳ Fetching Pooky product photography...':'✓ Product catalogue checked.'} ${state.photos} / ${state.catalogueCount} real product photos loaded. ${state.photos<10?'Illustrated placeholders are used where photos cannot load.':''}</p>
+      <p class="room-note">Send the link to your colleagues. They enter a nickname and join from their own device. Everyone sees the same round and timer.</p>
+      <div class="hint-card"><strong>✦ How to win</strong><br>Every five seconds, one new piece of the photo snaps into focus. Type the <b>product family name</b> (e.g. “Trindle”). The first correct answer wins the round. One-letter typos are accepted. Earlier guesses earn more points!</div>
+    </div><div class="panel"><div class="panel-label">PLAYERS · ${state.players.length}/${state.maxPlayers}</div><h2>In the room</h2>
+      <div class="players-list">${state.players.map((p,i)=>`<div class="player-entry"><span class="avatar p${i+1}">${escapeHtml(p.name.slice(0,1).toUpperCase())}</span><div class="player-meta"><b>${escapeHtml(p.name)} ${state.you===p.id?'(you)':''}</b><span>${i===0?'Game host':'Player '+(i+1)}</span></div><span class="online ${p.online?'':'waiting'}">${p.online?'● READY':'CONNECTING'}</span></div>`).join('')}
+      ${!full?`<div class="player-entry" style="border:2px dashed #ddd0c8;background:#fff"><span class="avatar" style="background:#f1ebeb;color:#b3a6a7">?</span><div class="player-meta"><b>Waiting for more players</b><span>Send the invite link...</span></div><span class="online waiting">◌ EMPTY</span></div>`:''}</div>
+      ${youHost?`<button class="btn btn-dark" id="start-game" ${canStart?'':'disabled'} style="width:100%">${canStart?'Let’s play! →':state.players.length<2?'Waiting for another player...':'Not enough unused products'}</button>`:`<button class="btn btn-dark" disabled style="width:100%">The host will start the game...</button>`}
+      <p class="statusline">${state.catalogueLoading?'⏳ Fetching Pooky product photography...':'✓ Product catalogue checked.'} ${state.photos} / ${state.catalogueCount} real product photos loaded. ${state.photos<10?'Illustrated placeholders are used where photos cannot load.':''} <br><b>${state.remaining} unseen products available for a new match.</b></p>
     </div></div>
     ${youHost?`<details class="panel upload-panel"><summary>📷 Want to use your own Pooky product photos instead?</summary><p>Select 10 or more JPG, PNG or WebP files from your computer. Use filenames like <b>Trindle.jpg</b>, <b>Freya.jpg</b> or <b>Aspen.jpg</b> — the filename becomes the product name/accepted answer. This is ideal for a game using your studio product imagery. Uploaded photos are kept temporarily on this server and disappear if it restarts.</p><input type="file" class="filefield" id="upload-files" multiple accept="image/jpeg,image/png,image/webp"/><div class="upload-progress" id="upload-progress">${state.uploads} photo${state.uploads===1?'':'s'} uploaded</div>${state.uploads>=10?`<label class="choice"><input type="checkbox" id="use-custom" ${state.useCustom?'checked':''}/> Use my uploaded images for the next game</label>`:''}</details>`:''}
+      ${youHost&&state.remaining<10?'<button class="btn btn-white" id="reset-used">Reset product history (allow repeats again)</button>':''}
     </section>`;
 }
-const playerScoreMarkup=(p,i)=>`<div class="scorebox ${i===1?'second':''}"><span class="avatar p${i+1}">${escapeHtml(p.name[0].toUpperCase())}</span><div style="min-width:0"><div class="score-name">${escapeHtml(p.name)}${p.id===state.you?' (you)':''}</div><div class="score-points">${p.score.toLocaleString('en-GB')}</div><div class="score-wins">${p.wins} round${p.wins===1?'':'s'} won</div></div></div>`;
+const playerScoreMarkup=(p,i)=>`<div class="scorebox ${i===0?'leader':''} ${p.id===state.you?'your-score':''}"><span class="score-rank">#${i+1}</span><span class="avatar">${escapeHtml(p.name[0].toUpperCase())}</span><div style="min-width:0"><div class="score-name">${escapeHtml(p.name)}${p.id===state.you?' (you)':''}</div><div class="score-points">${p.score.toLocaleString('en-GB')}</div><div class="score-wins">${p.wins} round${p.wins===1?'':'s'} won</div></div></div>`;
 function gameMarkup(){
   const isReveal=state.phase==='reveal';
   const itemReady=state.source==='photo';
@@ -84,22 +89,27 @@ function gameMarkup(){
   <div class="stage"><div class="image-stage" id="image-stage"><canvas id="pixel-canvas" class="pixel-canvas" width="800" height="800" aria-label="Product image gradually being revealed"></canvas><div class="stage-top"><span class="stage-tag ${isReveal?'revealed':'orange'}">${isReveal?'✓ REVEALED':'◈ WHAT’S THAT LIGHT?'}</span><span class="stage-tag">${state.round} / 10</span></div><div class="stage-corner">${itemReady?'REAL POOKY PHOTO':'ILLUSTRATED DEMO IMAGE'}</div><div id="loading-photo" class="stage-spinner">Loading image...</div></div>
     <div class="aside"><div class="timer-card"><div class="timer-head"><span>${isReveal?'ROUND COMPLETE':'TIME LEFT'}</span><span>${isReveal?'✓':'◷ 60 SECONDS'}</span></div><div class="timer-num" id="timer-num">${isReveal?'00':'60'}<span>SEC</span></div><div class="progress-rail"><div class="progress-fill" id="timer-fill"></div></div><div class="reveal-caption"><span>PICTURE REVEAL</span><span id="reveal-count">0 / 12</span></div><div class="reveal-dots" id="reveal-dots">${Array.from({length:12},()=>'<span></span>').join('')}</div></div>
       <div class="guess-card"><h3>Know the product?</h3><p>Be the first to name it. The faster you are, the more points you score.</p>
-      <form class="guess-form" id="guess-form"><input id="guess-input" class="field guess-field" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" placeholder="Type a Pooky product name..." maxlength="90" ${isReveal?'disabled':''} required/><button class="btn btn-primary" type="submit" ${isReveal?'disabled':''}>${isReveal?'Waiting for next round...':'Submit guess ↗'}</button></form><p class="subfoot">Only the product family name is needed · e.g. “Freya”</p>${roundEnd}</div></div></div>
-  <div class="scoreboard">${state.players.map((p,i)=>playerScoreMarkup(p,i)).join('<span class="score-middle">VS</span>')}</div></section>`;
+      <form class="guess-form" id="guess-form"><input id="guess-input" class="field guess-field" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" placeholder="Type a Pooky product name..." maxlength="90" ${isReveal?'disabled':''} required/><button class="btn btn-primary" type="submit" ${isReveal?'disabled':''}>${isReveal?'Waiting for next round...':'Submit guess ↗'}</button></form><p class="subfoot">Product family names work · e.g. “Freya” · one-character typos allowed</p>${roundEnd}</div></div></div>
+  <div class="scoreboard">${[...state.players].sort((a,b)=>b.score-a.score||b.wins-a.wins).map((p,i)=>playerScoreMarkup(p,i)).join('')}</div></section>`;
 }
 function endMarkup(){
-  const list=[...state.players].sort((a,b)=>b.score-a.score);
-  const tied=list[0].score===list[1].score;
-  return `<section class="end"><div class="eyebrow" style="justify-content:center">10 ROUNDS. ONE FINAL SCORE.</div><h1>Game <span style="color:var(--orange)">over!</span></h1><p>${tied?'It’s an exact tie. That calls for a rematch.':'The pixels have settled. The winner is...'} </p>
-    <div class="winner-hero"><small>${tied?'IT’S A DRAW!':'🏆 THE PIXEL PANIC CHAMPION'}</small><strong>${tied?'You both win!':escapeHtml(list[0].name)}</strong><p style="margin-top:12px">${tied?'What a battle.':'A true Pooky product expert. Respect.'}</p></div>
-    <div class="result-scores">${list.map(p=>`<div><span style="font-weight:800;font-size:14px">${escapeHtml(p.name)}</span><b>${p.score.toLocaleString('en-GB')}</b><span style="font-size:12px;color:#93888e">${p.wins} rounds won</span></div>`).join('')}</div>
-    ${state.you===state.host?'<button id="play-again" class="btn btn-primary" style="font-size:16px;padding:17px 28px">Play again ↗</button>':'<p style="font-size:14px">Waiting for the host to start a rematch...</p>'}
+  const list=[...state.players].sort((a,b)=>b.score-a.score||b.wins-a.wins);
+  const winners=list.filter(p=>p.score===list[0].score);
+  const tied=winners.length>1;
+  const hasNext=state.remaining>=state.total;
+  const youHost=state.you===state.host;
+  return `<section class="end"><div class="eyebrow" style="justify-content:center">10 ROUNDS. ONE FINAL SCORE.</div><h1>Game <span style="color:var(--orange)">over!</span></h1><p>${tied?'A tie at the top!':'The pixels have settled. The winner is...'}</p>
+    <div class="winner-hero"><small>${tied?'🏆 JOINT CHAMPIONS':'🏆 THE PIXEL PANIC CHAMPION'}</small><strong>${escapeHtml(tied?winners.map(p=>p.name).join(' & '):winners[0].name)}</strong><p style="margin-top:12px">${tied?'A seriously close game!':'A true Pooky product expert. Respect.'}</p></div>
+    <div class="result-scores">${list.map((p,i)=>`<div><small>#${i+1}</small> <span style="font-weight:800;font-size:14px">${escapeHtml(p.name)}</span><b>${p.score.toLocaleString('en-GB')}</b><span style="font-size:12px;color:#93888e">${p.wins} rounds won</span></div>`).join('')}</div>
+    <p class="stock-note">${state.remaining} previously unseen products left in this catalogue. Rematches never reuse a product name until you explicitly reset the history.</p>
+    ${youHost?`${hasNext?'<button id="play-again" class="btn btn-primary" style="font-size:16px;padding:17px 28px">Play again with 10 NEW products ↗</button>':'<p class="limit-note">Fewer than 10 new products remain, so a repeat-free rematch is unavailable.</p>'} <button id="reset-used" class="btn btn-white" style="margin-left:8px">Reset product history & allow repeats</button>`:'<p style="font-size:14px">Waiting for the host to start a rematch...</p>'}
     <div class="history"><h3>The round-by-round results</h3>${state.results.map(r=>`<div class="history-row"><span>ROUND ${r.round}</span><strong>${escapeHtml(r.answer)}</strong><span>${r.winner?'🏅 '+escapeHtml(r.winner):'No winner'}</span></div>`).join('')}</div>
     <button class="btn btn-white" id="leave-game" style="margin-top:26px">Exit game</button></section>`;
 }
+
 function render(force=false){
   const view=state?(state.phase==='lobby'?'lobby':state.phase==='finished'?'finished':'game'):'intro';
-  const activityKey=state?`${state.players.map(p=>`${p.id}:${p.online}:${p.score}`).join('|')}:${state.uploads}:${state.photos}:${state.catalogueLoading}`:'';
+  const activityKey=state?`${state.players.map(p=>`${p.id}:${p.online}:${p.score}`).join('|')}:${state.uploads}:${state.photos}:${state.catalogueLoading}:${state.remaining}:${state.usedCount}`:'';
   const key=state?`${view}:${state.code}:${state.round}:${state.phase}:${state.gameId}`:view;
   if(!force&&key===lastView&&activityKey===lastActivityKey)return;
   lastView=key;lastActivityKey=activityKey;
@@ -113,7 +123,7 @@ function render(force=false){
 }
 function attachEvents(view){
   if(view==='intro'){
-    $('#create-form').onsubmit=e=>{e.preventDefault();const n=$('#nickname').value.trim();safe(async()=>setRoom(await api('create',{name:n})));};
+    $('#create-form').onsubmit=e=>{e.preventDefault();const n=$('#nickname').value.trim();safe(async()=>setRoom(await api('create',{name:n,seen:storedUsed()})));};
     $('#join-form').onsubmit=e=>{e.preventDefault();const n=$('#nickname').value.trim(),code=$('#room-input').value.trim();safe(async()=>setRoom(await api('join',{name:n,code})));};
   }
   if(view==='lobby'){
@@ -125,6 +135,13 @@ function attachEvents(view){
   }
   if(view==='game'){
     const form=$('#guess-form');if(form)form.onsubmit=e=>{e.preventDefault();const input=$('#guess-input');const guess=input.value.trim();if(!guess)return;const button=$('button',form);button.disabled=true;safe(async()=>{try{const result=await api('guess',{guess});if(result.correct)toast(`Correct! +${result.points} points 🎉`);}finally{if(state?.phase==='playing'){button.disabled=false;input.value='';input.focus({preventScroll:true});}}});};
+  }
+  if(view==='lobby'||view==='finished'){
+    const reset=$('#reset-used');if(reset)reset.onclick=()=>safe(async()=>{
+      if(!confirm('Clear the list of previously played products? This allows products to appear again in future matches.'))return;
+      await api('reset-history');localStorage.removeItem(usedKey);
+      toast('Product history reset. Previous products can appear again.');
+    });
   }
   if(view==='finished'){
     const again=$('#play-again');if(again)again.onclick=()=>safe(async()=>{await api('start');});
