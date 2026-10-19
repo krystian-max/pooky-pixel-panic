@@ -7,8 +7,8 @@ const crypto = require('node:crypto');
 
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = path.join(__dirname, 'public');
-const ROUND_MS = 60_000;
-const REVEAL_MS = 4_500;
+const ROUND_MS = 45_000;
+const REVEAL_MS = 6_000;
 const ROUND_COUNT = 10;
 const MAX_PLAYERS = 20;
 const rooms = new Map();
@@ -171,12 +171,13 @@ function publicState(room,player){
   const product=(playing||exposing) ? room.deck[room.round] : null;
   return {
     code:room.code, phase:room.phase, you:player.id, host:room.host, round:room.round+1,
-    total:ROUND_COUNT, maxPlayers:MAX_PLAYERS, remaining:freshProducts(room).length, usedCount:room.used.size, endsAt:playing?room.endsAt:null, revealUntil:exposing?room.revealUntil:null,
+    total:ROUND_COUNT, roundSeconds:ROUND_MS/1000, maxPlayers:MAX_PLAYERS, remaining:freshProducts(room).length, usedCount:room.used.size, endsAt:playing?room.endsAt:null, revealUntil:exposing?room.revealUntil:null,
     image:product?`/api/image/${room.code}/${room.round}?v=${room.gameId}`:null,
     revealOrder:room.revealOrder, answer:exposing?product.name:null,
     productUrl:exposing?product.url||null:null,
     winner:exposing?room.roundWinner:null,
-    players:room.players.map(p=>({id:p.id,name:p.name,score:p.score,wins:p.wins,online:p.online})),
+    players:room.players.map(p=>({id:p.id,name:p.name,score:p.score,wins:p.wins,online:p.online,roundPlace:p.roundPlace||0,roundPoints:p.roundPoints||0})),
+    guessEvent:room.guessEvent||null, placements:room.roundPlacements||[],
     photos:loadedPhotos, catalogueCount:BANK.length, catalogueLoading:loading,
     source:room.deck?.[room.round]?.photo?'photo':'illustration',
     uploads:room.custom.length, useCustom:room.useCustom, gameId:room.gameId,
@@ -202,12 +203,14 @@ function closeRoom(room){
   rooms.delete(room.code);
 }
 
-function endRound(room,winner=null){
+function endRound(room){
   if(room.phase!=='playing')return;
   clearTimeout(room.roundTimer);
-  room.phase='reveal'; room.roundWinner=winner;
+  room.phase='reveal';
+  const first=room.roundPlacements?.[0];
+  room.roundWinner=first?.playerId||null;
   const item=room.deck[room.round];
-  room.history.push({round:room.round+1,answer:item.name,winner:winner?room.players.find(p=>p.id===winner)?.name||null:null,productUrl:item.url||null});
+  room.history.push({round:room.round+1,answer:item.name,winner:first?room.players.find(p=>p.id===first.playerId)?.name||null:null,placements:(room.roundPlacements||[]).map(p=>({...p})),productUrl:item.url||null});
   room.revealUntil=Date.now()+REVEAL_MS;
   sendState(room);
   room.nextTimer=setTimeout(()=>{if(!rooms.has(room.code))return;if(room.round>=ROUND_COUNT-1){room.phase='finished';sendState(room);}else startRound(room);},REVEAL_MS);
@@ -216,18 +219,20 @@ function startRound(room){
   cancelTimers(room);
   room.round++;
   room.phase='playing'; room.endsAt=Date.now()+ROUND_MS;
-  room.roundWinner=null; room.revealOrder=shuffle(Array.from({length:12},(_,i)=>i));
-  room.roundTimer=setTimeout(()=>endRound(room,null),ROUND_MS);
+  room.roundWinner=null; room.roundPlacements=[];room.guessEvent=null;
+  room.players.forEach(p=>{p.roundPlace=0;p.roundPoints=0;p.lastGuess=0;});
+  room.revealOrder=shuffle(Array.from({length:12},(_,i)=>i));
+  room.roundTimer=setTimeout(()=>endRound(room),ROUND_MS);
   sendState(room);
 }
 function startGame(room){
   cancelTimers(room);
-  room.players.forEach(p=>{p.score=0;p.wins=0;p.lastGuess=0;});
+  room.players.forEach(p=>{p.score=0;p.wins=0;p.lastGuess=0;p.roundPlace=0;p.roundPoints=0;});
   const available=freshProducts(room);
   if(available.length<ROUND_COUNT)throw Error(`Only ${available.length} unseen products remain. At least ${ROUND_COUNT} are needed. Reset product history to start over.`);
   room.deck=shuffle(available).slice(0,ROUND_COUNT).map(item=>({...item}));
   for(const item of room.deck)room.used.add(identity(item));
-  room.gameId=token().slice(0,8); room.history=[];room.round=-1;room.phase='playing';
+  room.gameId=token().slice(0,8); room.history=[];room.round=-1;room.phase='playing';room.guessSeq=0;room.guessEvent=null;room.roundPlacements=[];
   startRound(room);
 }
 function fail(res,err,status=400){reply(res,{ok:false,error:err},status);}
@@ -264,7 +269,7 @@ async function handle(req,res){
     let key;do{key=code();}while(rooms.has(key));
     const tok=token(),player={id:'P1',name,token:tok,score:0,wins:0,online:false,lastGuess:0};
     const excludes=Array.isArray(b.seen)?b.seen.slice(0,500).filter(v=>typeof v==='string').map(v=>norm(v.slice(0,100))).filter(Boolean):[];
-    const room={code:key,host:'P1',players:[player],phase:'lobby',round:-1,deck:[],history:[],custom:[],useCustom:false,used:new Set(excludes),gameId:'0',createdAt:Date.now()};
+    const room={code:key,host:'P1',players:[player],phase:'lobby',round:-1,deck:[],history:[],custom:[],useCustom:false,used:new Set(excludes),gameId:'0',guessSeq:0,guessEvent:null,roundPlacements:[],createdAt:Date.now()};
     rooms.set(key,room);sessions.set(tok,key);return reply(res,{ok:true,token:tok,state:publicState(room,player)});
   }
   if(pathname==='/api/join'){
@@ -302,18 +307,31 @@ async function handle(req,res){
   }
   if(pathname==='/api/guess'){
     if(room.phase!=='playing')return fail(res,'Round is not accepting guesses.');
-    const now=Date.now();if(now>=room.endsAt){endRound(room,null);return fail(res,'Time ran out!');}
-    const guess=norm(String(b.guess||'').slice(0,90));if(guess.length<2)return fail(res,'Type a product name.');
+    const now=Date.now();if(now>=room.endsAt){endRound(room);return fail(res,'Time ran out!');}
+    if(player.roundPlace)return reply(res,{ok:true,alreadyCorrect:true,place:player.roundPlace,points:player.roundPoints});
+    const raw=String(b.guess||'').trim().slice(0,90);
+    const guess=norm(raw);if(guess.length<2)return fail(res,'Type a product name.');
     if(now-player.lastGuess<900)return fail(res,'Give it a second before trying again.');
     player.lastGuess=now;
     const current=room.deck[room.round];const valid=[current.family,current.name, current.name.replace(/^tiny\s/i,'')].map(norm);
     const fullTokens=norm(current.name).split(' ');
     const family=norm(current.family);
     const reasonableLongName=guess.startsWith(family+' ') && guess.split(' ').every(word=>fullTokens.includes(word));
-    if(!valid.some(answer=>withinOneEdit(guess,answer))&&!reasonableLongName)return fail(res,'Not quite — try again!');
-    const seconds=Math.max(0,Math.ceil((room.endsAt-now)/1000));
-    const points=100+Math.round(seconds*15);player.score+=points;player.wins++;
-    endRound(room,player.id);return reply(res,{ok:true,correct:true,points});
+    const correct=valid.some(answer=>withinOneEdit(guess,answer))||reasonableLongName;
+    let place=0,points=0;
+    if(correct){
+      place=room.roundPlacements.length+1;
+      const seconds=Math.max(0,Math.ceil((room.endsAt-now)/1000));
+      points=Math.max(50,Math.round(110+seconds*12-(place-1)*60));
+      player.score+=points;
+      player.roundPlace=place;player.roundPoints=points;
+      if(place===1)player.wins++;
+      room.roundPlacements.push({playerId:player.id,name:player.name,place,points});
+    }
+    room.guessEvent={seq:++room.guessSeq,playerId:player.id,guess:raw,correct,place,points,at:now};
+    // Never finish a round because of a correct answer: all 45 seconds must elapse.
+    sendState(room);
+    return reply(res,{ok:true,correct,place,points});
   }
   if(pathname==='/api/upload'){
     if(player.id!==room.host)return fail(res,'Only the host can upload images.');
