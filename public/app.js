@@ -19,11 +19,21 @@ let lastGuessSeq=0;
 const ordinal=n=>n+(n%100>=11&&n%100<=13?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'));
 function updateScores(){
   if(!state||!['playing','reveal'].includes(state.phase))return;
+  const board=$('.scoreboard');
+  const cards=board?new Map([...board.querySelectorAll('[data-player-id]')].map(n=>[n.dataset.playerId,n])):new Map();
   for(const p of state.players){
-    const card=Array.from(document.querySelectorAll('[data-player-id]')).find(n=>n.dataset.playerId===p.id);
-    if(!card)continue;
+    const card=cards.get(p.id);if(!card)continue;
     const points=card.querySelector('.score-points');if(points)points.textContent=p.score.toLocaleString('en-GB');
     const place=card.querySelector('.round-rank');if(place)place.textContent=p.roundPlace?ordinal(p.roundPlace)+' · +'+p.roundPoints:'Still guessing';
+  }
+  if(board){
+    const ranking=[...state.players].sort((a,b)=>b.score-a.score||b.wins-a.wins||a.name.localeCompare(b.name));
+    ranking.forEach((p,i)=>{
+      const card=cards.get(p.id);if(!card)return;
+      if(board.children[i]!==card)board.insertBefore(card,board.children[i]||null);
+      card.classList.toggle('leader',i===0);
+      const rank=card.querySelector('.score-rank');if(rank)rank.textContent='#'+(i+1);
+    });
   }
   const me=state.players.find(p=>p.id===state.you),input=$('#guess-input'),btn=$('#guess-form button');
   if(input)input.disabled=state.phase!=='playing'||Boolean(me?.roundPlace);
@@ -139,13 +149,14 @@ function lobbyMarkup(){
 const playerScoreMarkup=(p,i)=>`<div class="scorebox ${i===0?'leader':''} ${p.id===state.you?'your-score':''}" data-player-id="${escapeHtml(p.id)}"><span class="score-rank">#${i+1}</span><span class="avatar">${escapeHtml(p.name[0].toUpperCase())}</span><div class="score-content"><div class="score-name">${escapeHtml(p.name)}${p.id===state.you?' (you)':''}</div><div class="score-points">${p.score.toLocaleString('en-GB')}</div><div class="round-rank">${p.roundPlace?`${ordinal(p.roundPlace)} · +${p.roundPoints}`:'Still guessing'}</div></div></div>`;
 function gameMarkup(){
   const isReveal=state.phase==='reveal',place=state.placements||[];
-  const answer=isReveal?`<div class="round-result product-answer"><div class="answer-eyebrow">THE PRODUCT WAS</div><h2>${escapeHtml(state.answer)}</h2>${state.productUrl?`<a href="${escapeHtml(state.productUrl)}" target="_blank" rel="noopener noreferrer">View on Pooky ↗</a>`:''}<p>${place.length?place.map(p=>`${ordinal(p.place)} ${escapeHtml(p.name)} (+${p.points})`).join(' · '):'No correct answers this time!'}</p></div>`:'';
+  const answer=isReveal?`<div class="round-result compact-round-summary"><strong>Round finished!</strong><p>${place.length?place.map(p=>`${ordinal(p.place)}: ${escapeHtml(p.name)} (+${p.points})`).join(' · '):'No correct guesses this round.'}</p>${state.productUrl?`<a href="${escapeHtml(state.productUrl)}" target="_blank" rel="noopener noreferrer">View product on Pooky ↗</a>`:''}</div>`:'';
+
   return `<section class="game"><div class="game-heading"><div><div class="round-kicker">THE POOKY PRODUCT CHALLENGE</div><h2 class="game-title">Round <span style="color:var(--orange)">${state.round}</span> <span style="color:#bcaeab">/ ${state.total}</span></h2></div><div class="round-bars">${Array.from({length:state.total},(_,i)=>`<span class="${i<state.round-1?'passed':i===state.round-1?'active':''}"></span>`).join('')}</div></div>
-  <div class="stage"><div class="image-stage" id="image-stage"><canvas id="pixel-canvas" class="pixel-canvas" width="800" height="800" aria-label="Product image gradually revealed"></canvas><div class="stage-top"><span class="stage-tag ${isReveal?'revealed':'orange'}">${isReveal?'✓ REVEALED':'✺ NAME THAT LIGHT'}</span><span class="stage-tag">${state.round} / 10</span></div><div class="stage-corner">${state.source==='photo'?'POOKY PRODUCT PHOTOGRAPH':'ILLUSTRATED DEMO IMAGE'}</div><div id="loading-photo" class="stage-spinner">Loading image...</div></div>
+  <div class="game-workspace"><div class="stage"><div class="image-stage" id="image-stage"><canvas id="pixel-canvas" class="pixel-canvas" width="800" height="800" aria-label="Product image gradually revealed"></canvas><div class="stage-top"><span class="stage-tag ${isReveal?'revealed':'orange'}">${isReveal?'✓ REVEALED':'✺ NAME THAT LIGHT'}</span><span class="stage-tag">${state.round} / 10</span></div><div class="stage-corner">${state.source==='photo'?'POOKY PRODUCT PHOTOGRAPH':'ILLUSTRATED DEMO IMAGE'}</div>${isReveal?`<div class="image-answer-bubble" role="status" aria-live="polite"><span>THE PRODUCT WAS</span><strong>${escapeHtml(state.answer)}</strong></div>`:''}<div id="loading-photo" class="stage-spinner">Loading image...</div></div>
   <div class="aside"><div class="timer-card"><div class="timer-head"><span>${isReveal?'ROUND COMPLETE':'TIME REMAINING'}</span><span>45 SECONDS</span></div><div class="timer-num" id="timer-num">${isReveal?'00':'45'}<span>SEC</span></div><div class="progress-rail"><div class="progress-fill" id="timer-fill"></div></div><div class="reveal-caption"><span>PICTURE REVEAL</span><span id="reveal-count">0 / 12</span></div><div class="reveal-dots" id="reveal-dots">${Array.from({length:12},()=>'<span></span>').join('')}</div></div>
   <div class="guess-card"><h3>Have a bright idea?</h3><p>Everyone gets 45 seconds to guess. Earlier correct answers earn more points!</p>
   <form class="guess-form" id="guess-form"><input id="guess-input" class="field guess-field" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Which Pooky product is it?" maxlength="90" ${isReveal?'disabled':''} required/><button class="btn btn-primary" type="submit" ${isReveal?'disabled':''}>Submit guess ↗</button></form><p class="subfoot">One letter out? We'll still count it.</p>${answer}</div></div></div>
-  <h3 class="leaderboard-heading">THE LEADERBOARD ✺</h3><div class="scoreboard">${[...state.players].sort((a,b)=>b.score-a.score||b.wins-a.wins).map((p,i)=>playerScoreMarkup(p,i)).join('')}</div></section>`;
+  <aside class="leaderboard-panel" aria-label="Live leaderboard"><h3 class="leaderboard-heading">THE LEADERBOARD ✺</h3><p class="leaderboard-caption">LIVE RANKINGS · ${state.players.length} PLAYERS</p><div class="scoreboard">${[...state.players].sort((a,b)=>b.score-a.score||b.wins-a.wins).map((p,i)=>playerScoreMarkup(p,i)).join('')}</div></aside></div></section>`;
 }
 function endMarkup(){
   const list=[...state.players].sort((a,b)=>b.score-a.score||b.wins-a.wins);
