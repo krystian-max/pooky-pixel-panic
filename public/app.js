@@ -118,7 +118,11 @@ function introMarkup(){
       <div class="form-panel campaign-form">
         <h3>Ready for a little friendly competition?</h3>
         <p class="subtle">Create a room, invite your colleagues and let the guessing begin.</p>
-        <form id="create-form"><div class="form-row"><input class="field" id="nickname" aria-label="Your nickname" placeholder="Your nickname" maxlength="24" minlength="2" autocomplete="nickname" required/><button class="btn btn-primary" type="submit">Create game →</button></div></form>
+        <form id="create-form"><div class="mode-picker" role="group" aria-label="Choose game mode">
+          <label class="mode-option"><input type="radio" name="mode" value="pixel" checked><span class="mode-emoji">▦</span><strong>Pixel Panic</strong><small>Reveal & guess the name</small></label>
+          <label class="mode-option"><input type="radio" name="mode" value="sku"><span class="mode-emoji">#</span><strong>SKU Showdown</strong><small>Type the product code</small></label>
+          <label class="mode-option"><input type="radio" name="mode" value="draw"><span class="mode-emoji">✎</span><strong>Pooky Pictionary</strong><small>Draw for your colleagues</small></label>
+        </div><div class="form-row"><input class="field" id="nickname" aria-label="Your nickname" placeholder="Your nickname" maxlength="24" minlength="2" autocomplete="nickname" required/><button class="btn btn-primary" type="submit">Create game →</button></div></form>
         <form id="join-form"><div class="join-row"><input class="field" id="room-input" aria-label="Room code" placeholder="ROOM CODE" value="${escapeHtml(maybeCode)}" maxlength="5" required/><button class="btn btn-white" type="submit" style="flex:1">Join a room →</button></div></form>
       </div>
     </div>
@@ -129,21 +133,22 @@ function introMarkup(){
 function lobbyMarkup(){
   const youHost=state.you===state.host;
   const full=state.players.length>=state.maxPlayers;
-  const canStart=state.players.length>=2&&state.remaining>=10;
-  return `<section class="lobby"><div class="lobby-heading"><div class="eyebrow">YOUR GAME IS READY</div><h1>Bring on the <span style="color:var(--orange)">rivalry.</span></h1><p>Share your room code and get guessing.</p></div>
+  const need=state.mode==='draw'?state.players.length*2:10;
+  const canStart=state.players.length>=2&&state.remaining>=need&&!state.catalogueLoading;
+  return `<section class="lobby"><div class="lobby-heading"><div class="eyebrow">YOUR GAME IS READY</div><h1>Bring on the <span style="color:var(--orange)">rivalry.</span></h1><p>Mode: <b>${state.mode==='sku'?'SKU Showdown':state.mode==='draw'?'Pooky Pictionary':'Pixel Panic'}</b> · Share your room code and get guessing.</p></div>
     <div class="lobby-grid"><div class="panel">
       <div class="panel-label">YOUR PRIVATE GAME CODE</div><div class="room-code">${escapeHtml(state.code)}</div>
       <div class="lobby-actions"><button class="btn btn-primary" id="copy-invite">↗ Copy invite link</button><button class="btn btn-white" id="copy-code">Copy code</button></div>
       <p class="room-note">Send the link to your colleagues. They enter a nickname and join from their own device. Everyone sees the same round and timer.</p>
-      <div class="hint-card"><strong>✦ How to win</strong><br>Every five seconds, one new piece of the photo snaps into focus. Type the <b>product family name</b> (e.g. “Trindle”). Every round lasts 45 seconds. Every correct guess scores, ranked 1st, 2nd, 3rd and beyond. One-letter typos are accepted!</div>
+      <div class="hint-card"><strong>✦ ${state.mode==='sku'?'SKU SHOWDOWN':state.mode==='draw'?'POOKY PICTIONARY':'PIXEL PANIC'}</strong><br>${state.mode==='sku'?'See the product image clearly, type its exact UK product code, and use the hints as the clock ticks down.':state.mode==='draw'?'Everybody draws twice. The artist chooses one of three secret products and has 30 seconds to draw it while everyone else guesses.':'Pictures sharpen as the 45 seconds tick down. Type the product family name to score. One-letter typos count.'}</div>
     </div><div class="panel"><div class="panel-label">PLAYERS · ${state.players.length}/${state.maxPlayers}</div><h2>In the room</h2>
       <div class="players-list">${state.players.map((p,i)=>`<div class="player-entry"><span class="avatar p${i+1}">${escapeHtml(p.name.slice(0,1).toUpperCase())}</span><div class="player-meta"><b>${escapeHtml(p.name)} ${state.you===p.id?'(you)':''}</b><span>${i===0?'Game host':'Player '+(i+1)}</span></div><span class="online ${p.online?'':'waiting'}">${p.online?'● READY':'CONNECTING'}</span></div>`).join('')}
       ${!full?`<div class="player-entry" style="border:2px dashed #ddd0c8;background:#fff"><span class="avatar" style="background:#f1ebeb;color:#b3a6a7">?</span><div class="player-meta"><b>Waiting for more players</b><span>Send the invite link...</span></div><span class="online waiting">◌ EMPTY</span></div>`:''}</div>
-      ${youHost?`<button class="btn btn-dark" id="start-game" ${canStart?'':'disabled'} style="width:100%">${canStart?'Let’s play! →':state.players.length<2?'Waiting for another player...':'Not enough unused products'}</button>`:`<button class="btn btn-dark" disabled style="width:100%">The host will start the game...</button>`}
+      ${youHost?`<button class="btn btn-dark" id="start-game" ${canStart?'':'disabled'} style="width:100%">${canStart?'Let’s play! →':state.players.length<2?'Waiting for another player...':state.catalogueLoading?'Preparing products...':'Not enough unused products'}</button>`:`<button class="btn btn-dark" disabled style="width:100%">The host will start the game...</button>`}
       <p class="statusline">${state.catalogueLoading?'⏳ Fetching Pooky product photography...':'✓ Product catalogue checked.'} ${state.photos} / ${state.catalogueCount} real product photos loaded. ${state.photos<10?'Illustrated placeholders are used where photos cannot load.':''} <br><b>${state.remaining} unseen products available for a new match.</b></p>
     </div></div>
     ${youHost?`<details class="panel upload-panel"><summary>📷 Want to use your own Pooky product photos instead?</summary><p>Select 10 or more JPG, PNG or WebP files from your computer. Use filenames like <b>Trindle.jpg</b>, <b>Freya.jpg</b> or <b>Aspen.jpg</b> — the filename becomes the product name/accepted answer. This is ideal for a game using your studio product imagery. Uploaded photos are kept temporarily on this server and disappear if it restarts.</p><input type="file" class="filefield" id="upload-files" multiple accept="image/jpeg,image/png,image/webp"/><div class="upload-progress" id="upload-progress">${state.uploads} photo${state.uploads===1?'':'s'} uploaded</div>${state.uploads>=10?`<label class="choice"><input type="checkbox" id="use-custom" ${state.useCustom?'checked':''}/> Use my uploaded images for the next game</label>`:''}</details>`:''}
-      ${youHost&&state.remaining<10?'<button class="btn btn-white" id="reset-used">Reset product history (allow repeats again)</button>':''}
+      ${youHost&&state.remaining<need?'<button class="btn btn-white" id="reset-used">Reset product history (allow repeats again)</button>':''}
     </section>`;
 }
 const playerScoreMarkup=(p,i)=>`<div class="scorebox ${i===0?'leader':''} ${p.id===state.you?'your-score':''}" data-player-id="${escapeHtml(p.id)}"><span class="score-rank">#${i+1}</span><span class="avatar">${escapeHtml(p.name[0].toUpperCase())}</span><div class="score-content"><div class="score-name">${escapeHtml(p.name)}${p.id===state.you?' (you)':''}</div><div class="score-points">${p.score.toLocaleString('en-GB')}</div><div class="round-rank">${p.roundPlace?`${ordinal(p.roundPlace)} · +${p.roundPoints}`:'Still guessing'}</div></div></div>`;
@@ -164,11 +169,11 @@ function endMarkup(){
   const tied=winners.length>1;
   const hasNext=state.remaining>=state.total;
   const youHost=state.you===state.host;
-  return `<section class="end"><div class="eyebrow" style="justify-content:center">10 ROUNDS. ONE FINAL SCORE.</div><h1>Game <span style="color:var(--orange)">over!</span></h1><p>${tied?'A tie at the top!':'The pixels have settled. The winner is...'}</p>
+  return `<section class="end"><div class="eyebrow" style="justify-content:center">THE FINAL SCORE IS IN.</div><h1>Game <span style="color:var(--orange)">over!</span></h1><p>${tied?'A tie at the top!':'The game has finished. The winner is...'}</p>
     <div class="winner-hero"><small>${tied?'🏆 JOINT CHAMPIONS':'🏆 THE PIXEL PANIC CHAMPION'}</small><strong>${escapeHtml(tied?winners.map(p=>p.name).join(' & '):winners[0].name)}</strong><p style="margin-top:12px">${tied?'A seriously close game!':'A true Pooky product expert. Respect.'}</p></div>
     <div class="result-scores">${list.map((p,i)=>`<div><small>#${i+1}</small> <span style="font-weight:800;font-size:14px">${escapeHtml(p.name)}</span><b>${p.score.toLocaleString('en-GB')}</b><span style="font-size:12px;color:#93888e">${p.wins} rounds won</span></div>`).join('')}</div>
     <p class="stock-note">${state.remaining} previously unseen products left in this catalogue. Rematches never reuse a product name until you explicitly reset the history.</p>
-    ${youHost?`${hasNext?'<button id="play-again" class="btn btn-primary" style="font-size:16px;padding:17px 28px">Play again with 10 NEW products ↗</button>':'<p class="limit-note">Fewer than 10 new products remain, so a repeat-free rematch is unavailable.</p>'} <button id="reset-used" class="btn btn-white" style="margin-left:8px">Reset product history & allow repeats</button>`:'<p style="font-size:14px">Waiting for the host to start a rematch...</p>'}
+    ${youHost?`${hasNext?'<button id="play-again" class="btn btn-primary" style="font-size:16px;padding:17px 28px">Play again with NEW products ↗</button>':'<p class="limit-note">Not enough fresh products remain for this mode. Reset history to play again.</p>'} <button id="reset-used" class="btn btn-white" style="margin-left:8px">Reset product history & allow repeats</button>`:'<p style="font-size:14px">Waiting for the host to start a rematch...</p>'}
     <div class="history"><h3>The round-by-round results</h3>${state.results.map(r=>`<div class="history-row"><span>ROUND ${r.round}</span><strong>${escapeHtml(r.answer)}</strong><span>${r.winner?'🏅 '+escapeHtml(r.winner):'No winner'}</span></div>`).join('')}</div>
     <button class="btn btn-white exit-room-button" style="margin-top:26px">${youHost?'Cancel game & return to menu':'Leave game & return to menu'}</button></section>`;
 }
@@ -194,7 +199,7 @@ function render(force=false){
 function attachEvents(view){
   document.querySelectorAll('.exit-room-button').forEach(button=>{button.onclick=()=>safe(leaveCurrentRoom);});
   if(view==='intro'){
-    $('#create-form').onsubmit=e=>{e.preventDefault();const n=$('#nickname').value.trim();safe(async()=>setRoom(await api('create',{name:n,seen:storedUsed()})));};
+    $('#create-form').onsubmit=e=>{e.preventDefault();const n=$('#nickname').value.trim(),mode=document.querySelector('input[name="mode"]:checked')?.value||'pixel';safe(async()=>setRoom(await api('create',{name:n,mode,seen:storedUsed()})));};
     $('#join-form').onsubmit=e=>{e.preventDefault();const n=$('#nickname').value.trim(),code=$('#room-input').value.trim();safe(async()=>setRoom(await api('join',{name:n,code})));};
   }
   if(view==='lobby'){
