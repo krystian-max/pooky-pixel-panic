@@ -287,6 +287,7 @@ function startRound(room){
   room.players.forEach(p=>{p.roundPlace=0;p.roundPoints=0;p.lastGuess=0;});
   room.revealOrder=shuffle(Array.from({length:12},(_,i)=>i));
   if(room.mode==='draw'){
+    while(room.round<room.drawOrder.length-1&&!room.players.some(p=>p.id===room.drawOrder[room.round]))room.round++;
     room.artistId=room.drawOrder[room.round];
     room.choices=shuffle(freshProducts(room)).slice(0,3);
     if(!room.choices.length){room.phase='finished';sendState(room);return;}
@@ -385,8 +386,9 @@ async function handle(req,res){
   const {room,player}=p;
   if(pathname==='/api/cancel'){
     if(player.id!==room.host)return fail(res,'Only the host can cancel the whole game.',403);
+    const usedFamilies=[...room.used];
     closeRoom(room);
-    return reply(res,{ok:true});
+    return reply(res,{ok:true,usedFamilies});
   }
   if(pathname==='/api/leave'){
     if(player.id===room.host)return fail(res,'The host must cancel the game to leave.',403);
@@ -394,6 +396,7 @@ async function handle(req,res){
     if(liveStream){streams.delete(player.token);try{liveStream.end();}catch{}}
     sessions.delete(player.token);
     room.players=room.players.filter(p=>p.token!==player.token);
+    if(room.mode==='draw'&&room.artistId===player.id){if(room.phase==='choosing'){beginDrawing(room,0);endRound(room);}else if(room.phase==='playing')endRound(room);}
     sendState(room);
     return reply(res,{ok:true});
   }
