@@ -173,7 +173,7 @@ function publicState(room,player){
     code:room.code, phase:room.phase, you:player.id, host:room.host, round:room.round+1,
     total:ROUND_COUNT, roundSeconds:ROUND_MS/1000, maxPlayers:MAX_PLAYERS, remaining:freshProducts(room).length, usedCount:room.used.size, endsAt:playing?room.endsAt:null, revealUntil:exposing?room.revealUntil:null,
     image:product?`/api/image/${room.code}/${room.round}?v=${room.gameId}`:null,
-    revealOrder:room.revealOrder, answer:exposing?product.name:null,
+    revealOrder:room.revealOrder, answer:exposing?product.name:null, answerFamily:exposing?product.family:null,
     productUrl:exposing?product.url||null:null,
     winner:exposing?room.roundWinner:null,
     players:room.players.map(p=>({id:p.id,name:p.name,score:p.score,wins:p.wins,online:p.online,roundPlace:p.roundPlace||0,roundPoints:p.roundPoints||0})),
