@@ -301,3 +301,58 @@ body{background:#fff;font-family:'Manrope','DM Sans',Arial,sans-serif;color:#171
   .image-answer-bubble strong{font-size:clamp(27px,8vw,46px)}
 }
 @media(prefers-reduced-motion:reduce){.image-answer-bubble{animation:none}}
+
+
+/* 2026 three-mode selector and realtime Pooky Pictionary */
+.mode-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:17px}
+.mode-option{position:relative;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;text-align:center;border:1px solid #dadada;padding:11px 6px 12px;min-height:94px;cursor:pointer;background:#fafaf8;transition:background .15s,border-color .15s}
+.mode-option:has(input:checked){border:2px solid #178d95;background:#e9f6f5}
+.mode-option:focus-within{outline:2px solid #178d95;outline-offset:2px}
+.mode-option input{position:absolute;opacity:0;pointer-events:none}
+.mode-option .mode-emoji{font-size:25px;color:#177e87;line-height:1}
+.mode-option strong{font-size:11px;font-weight:800;line-height:1.2}
+.mode-option small{font-size:9px;line-height:1.3;color:#656565}
+.sku-hint-box{margin:15px 0 7px;padding:14px;background:#eaf5f3;border:1px solid #cde4e0}
+.sku-hint-box small{display:block;font-size:10px;letter-spacing:1.1px;color:#42716f;font-weight:800}
+.sku-hint-box strong{font:700 clamp(12px,1.15vw,17px)/1.5 'Manrope',system-ui,sans-serif;word-break:break-all;letter-spacing:1px;color:#154f52}
+.drawing-stage{display:grid;place-items:center;background:#fffdf7;position:relative;overflow:hidden;aspect-ratio:1/1}
+.draw-board{width:100%;height:100%;position:relative;display:grid;place-items:center}
+#draw-canvas{display:block;width:100%;max-height:100%;aspect-ratio:1/1;object-fit:contain;background:#fffdf7;touch-action:none}
+.draw-final-image{position:absolute;inset:0;display:grid;place-items:center;background:#fffdf7;animation:answer-soft-fade .5s ease-out both}
+.draw-final-image img{width:100%;height:100%;object-fit:contain}
+.draw-final-image .image-answer-bubble{bottom:8%}
+.draw-choose{width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:16px 12px;gap:15px}
+.draw-choose h3{font:600 clamp(27px,3vw,40px)/1 'Caveat',cursive;text-align:center}
+.draw-choose p{font-size:13px;text-align:center;line-height:1.5;max-width:380px;color:#666}
+.draw-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%}
+.draw-choice{padding:6px;background:#fff;border:2px solid #dde7e4;min-width:0;cursor:pointer;transition:transform .16s,border-color .16s}
+.draw-choice:hover{transform:translateY(-5px);border-color:#138d92}
+.draw-choice img{display:block;width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff}
+.draw-choice b{display:block;font-size:11px;margin:8px 0 4px;overflow-wrap:anywhere}
+.draw-turn-label{display:inline-block;background:#d3eeeb;color:#17646b;padding:8px 11px;font-size:10px;font-weight:800;letter-spacing:1px}
+.draw-tools{margin-top:11px;display:flex;flex-direction:column;align-items:start;gap:11px}
+.draw-tools>strong{font-size:12px}
+.draw-tools>label{font-size:12px;display:flex;align-items:center;gap:11px}
+.draw-tools input[type=range]{accent-color:#178a8d}
+.draw-colours{display:flex;flex-wrap:wrap;gap:7px}
+.draw-swatch{width:30px;height:30px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #c8c8c8;cursor:pointer}
+.draw-swatch.selected{box-shadow:0 0 0 3px #21858b}
+.drawing-game .image-stage{max-height:none;aspect-ratio:1}
+.drawing-game .guess-card{flex:none;min-height:0}
+.drawing-game .guess-card p{margin-bottom:13px}
+@media(min-width:1100px){
+ .drawing-game .stage{grid-template-columns:minmax(0,1.14fr) minmax(265px,.78fr)}
+ .drawing-game .drawing-stage{min-height:0}
+}
+@media(max-width:1099px){.drawing-game .drawing-stage{min-height:310px}}
+@media(max-width:760px){
+ .mode-picker{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .mode-option{min-height:92px;padding:7px 4px}
+ .mode-option strong{font-size:10px}
+ .mode-option small{font-size:8px}
+ .draw-choose{padding:10px 7px}
+ .draw-choice b{font-size:9px}
+ .draw-turn-label{font-size:9px}
+ .drawing-game .drawing-stage{min-height:0}
+ .draw-final-image .image-answer-bubble{bottom:10%}
+}
