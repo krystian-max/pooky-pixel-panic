@@ -86,6 +86,7 @@ function connectEvents(){
     rememberFinishedGame();
     render(!oldPhase||oldPhase!==state.phase||oldRound!==state.round||oldCount!==state.players.length||oldGame!==state.gameId);
     updateScores();
+    const hint=$('#sku-hint');if(hint&&state.skuHint)hint.textContent=state.skuHint;
     if(state.guessEvent&&state.guessEvent.seq!==lastGuessSeq){lastGuessSeq=state.guessEvent.seq;guessFlash(state.guessEvent);}
   }catch(e){console.warn(e);}};
   source.onerror=()=>{/* EventSource automatically reconnects after brief network interruptions. */};
@@ -209,14 +210,15 @@ function drawingMarkup(){
 }
 
 function gameMarkup(){
-  const isReveal=state.phase==='reveal',place=state.placements||[];
+  if(state.mode==='draw')return drawingMarkup();
+  const isReveal=state.phase==='reveal',isSku=state.mode==='sku',place=state.placements||[];
   const answer=isReveal?`<div class="round-result compact-round-summary"><strong>Round finished!</strong><p>${place.length?place.map(p=>`${ordinal(p.place)}: ${escapeHtml(p.name)} (+${p.points})`).join(' · '):'No correct guesses this round.'}</p>${state.productUrl?`<a href="${escapeHtml(state.productUrl)}" target="_blank" rel="noopener noreferrer">View product on Pooky ↗</a>`:''}</div>`:'';
 
   return `<section class="game"><div class="game-heading"><div><div class="round-kicker">THE POOKY PRODUCT CHALLENGE</div><h2 class="game-title">Round <span style="color:var(--orange)">${state.round}</span> <span style="color:#bcaeab">/ ${state.total}</span></h2></div><div class="round-bars">${Array.from({length:state.total},(_,i)=>`<span class="${i<state.round-1?'passed':i===state.round-1?'active':''}"></span>`).join('')}</div></div>
-  <div class="game-workspace"><div class="stage"><div class="image-stage" id="image-stage"><canvas id="pixel-canvas" class="pixel-canvas" width="800" height="800" aria-label="Product image gradually revealed"></canvas><div class="stage-top"><span class="stage-tag ${isReveal?'revealed':'orange'}">${isReveal?'✓ REVEALED':'✺ NAME THAT LIGHT'}</span><span class="stage-tag">${state.round} / 10</span></div><div class="stage-corner">${state.source==='photo'?'POOKY PRODUCT PHOTOGRAPH':'ILLUSTRATED DEMO IMAGE'}</div>${isReveal?`<div class="image-answer-bubble" role="status" aria-live="polite"><span>It’s…</span><strong>${escapeHtml(state.answerFamily || (state.answer || '').split(' ')[0])}</strong></div>`:''}<div id="loading-photo" class="stage-spinner">Loading image...</div></div>
-  <div class="aside"><div class="timer-card"><div class="timer-head"><span>${isReveal?'ROUND COMPLETE':'TIME REMAINING'}</span><span>45 SECONDS</span></div><div class="timer-num" id="timer-num">${isReveal?'00':'45'}<span>SEC</span></div><div class="progress-rail"><div class="progress-fill" id="timer-fill"></div></div><div class="reveal-caption"><span>PICTURE REVEAL</span><span id="reveal-count">0 / 12</span></div><div class="reveal-dots" id="reveal-dots">${Array.from({length:12},()=>'<span></span>').join('')}</div></div>
-  <div class="guess-card"><h3>Have a bright idea?</h3><p>Everyone gets 45 seconds to guess. Earlier correct answers earn more points!</p>
-  <form class="guess-form" id="guess-form"><input id="guess-input" class="field guess-field" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Which Pooky product is it?" maxlength="90" ${isReveal?'disabled':''} required/><button class="btn btn-primary" type="submit" ${isReveal?'disabled':''}>Submit guess ↗</button></form><p class="subfoot">One letter out? We'll still count it.</p>${answer}</div></div></div>
+  <div class="game-workspace"><div class="stage"><div class="image-stage" id="image-stage"><canvas id="pixel-canvas" class="pixel-canvas" width="800" height="800" aria-label="Product image gradually revealed"></canvas><div class="stage-top"><span class="stage-tag ${isReveal?'revealed':'orange'}">${isReveal?'✓ REVEALED':isSku?'# SKU SHOWDOWN':'✺ NAME THAT LIGHT'}</span><span class="stage-tag">${state.round} / 10</span></div><div class="stage-corner">${state.source==='photo'?'POOKY PRODUCT PHOTOGRAPH':'ILLUSTRATED DEMO IMAGE'}</div>${isReveal?`<div class="image-answer-bubble" role="status" aria-live="polite"><span>${isSku?'THE PRODUCT CODE IS':'It’s…'}</span><strong>${escapeHtml(isSku?state.skuAnswer:(state.answerFamily || (state.answer || '').split(' ')[0]))}</strong></div>`:''}<div id="loading-photo" class="stage-spinner">Loading image...</div></div>
+  <div class="aside"><div class="timer-card"><div class="timer-head"><span>${isReveal?'ROUND COMPLETE':'TIME REMAINING'}</span><span>45 SECONDS</span></div><div class="timer-num" id="timer-num">${isReveal?'00':'45'}<span>SEC</span></div><div class="progress-rail"><div class="progress-fill" id="timer-fill"></div></div><div class="reveal-caption"><span>${isSku?'SKU CLUE':'PICTURE REVEAL'}</span><span id="reveal-count">0 / 12</span></div><div class="reveal-dots" id="reveal-dots">${Array.from({length:12},()=>'<span></span>').join('')}</div></div>
+  <div class="guess-card"><h3>Have a bright idea?</h3><p>${isSku?'Type the exact UK product code. More characters will be revealed as time passes.':'Everyone gets 45 seconds to guess. Earlier correct answers earn more points!'}</p>
+  <form class="guess-form" id="guess-form"><input id="guess-input" class="field guess-field" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="${isSku?'Enter the UK product code…':'Which Pooky product is it?'}" maxlength="90" ${isReveal?'disabled':''} required/><button class="btn btn-primary" type="submit" ${isReveal?'disabled':''}>Submit guess ↗</button></form><p class="subfoot">One letter out? We'll still count it.</p>${answer}</div></div></div>
   <aside class="leaderboard-panel" aria-label="Live leaderboard"><h3 class="leaderboard-heading">THE LEADERBOARD ✺</h3><p class="leaderboard-caption">LIVE RANKINGS · ${state.players.length} PLAYERS</p><div class="scoreboard">${[...state.players].sort((a,b)=>b.score-a.score||b.wins-a.wins).map((p,i)=>playerScoreMarkup(p,i)).join('')}</div></aside></div></section>`;
 }
 function endMarkup(){
@@ -315,7 +317,7 @@ function mountImage(){
 }
 function paintReveal(revealed,fully=false){
   const canvas=$('#pixel-canvas');if(!canvas||!sourceCanvas||!imageReady)return;
-  const count=fully?12:revealed;
+  const count=state?.mode==='sku'?12:fully?12:revealed;
   if(count===paintCount)return;paintCount=count;
   const ctx=canvas.getContext('2d',{alpha:false});
   // First draw an intentionally low-resolution (28 × 28) version, without smoothing.
@@ -331,17 +333,18 @@ function paintReveal(revealed,fully=false){
   }
 }
 function updateClock(){
-  if(!state||!['playing','reveal'].includes(state.phase))return;
-  const playing=state.phase==='playing';
+  if(!state||!['playing','reveal','choosing'].includes(state.phase))return;
+  const choosing=state.phase==='choosing';
+  const playing=state.phase==='playing'||choosing;
   const remains=playing?Math.max(0,(state.endsAt-Date.now())/1000):0;
-  const duration=state.roundSeconds||45;
+  const duration=choosing?15:state.roundSeconds||45;
   const elapsed=playing?duration-remains:duration;
-  const revealed=playing?Math.min(12,Math.floor((elapsed+.0001)/(duration/12))):12;
+  const revealed=state.mode==='sku'?12:playing?Math.min(12,Math.floor((elapsed+.0001)/(duration/12))):12;
   const timer=$('#timer-num');if(timer)timer.innerHTML=`${pad(Math.ceil(remains))}<span>SEC</span>`;
-  const fill=$('#timer-fill');if(fill)fill.style.width=(remains/(state.roundSeconds||45)*100)+'%';
+  const fill=$('#timer-fill');if(fill)fill.style.width=(remains/duration*100)+'%';
   const count=$('#reveal-count');if(count)count.textContent=`${revealed} / 12`;
   const dots=$('#reveal-dots');if(dots)Array.from(dots.children).forEach((n,i)=>n.classList.toggle('done',i<revealed));
-  paintReveal(revealed,!playing);
+  if(state.mode!=='draw')paintReveal(revealed,!playing);
 }
 async function init(){
   timerHandle=setInterval(updateClock,90);
