@@ -212,7 +212,7 @@ function publicState(room,player){
   const choices=choosing&&room.mode==='draw'&&player.id===room.artistId?(room.choices||[]).map((p,i)=>({name:p.name,family:p.family,image:'/api/choice-image/'+room.code+'/'+i+'?token='+player.token})):[];
   return {
     code:room.code, mode:room.mode, phase:room.phase, you:player.id, host:room.host, round:room.round+1,
-    total:totalRounds(room), roundSeconds:roundDuration(room)/1000, maxPlayers:MAX_PLAYERS, remaining:freshProducts(room).length, usedCount:room.used.size, endsAt:(playing||choosing)?room.endsAt:null, revealUntil:exposing?room.revealUntil:null, artistId:room.artistId||null, artistName:artist?.name||null, choices, selected:!!product, drawLines:room.mode==='draw'?(room.drawLines||[]):[],
+    total:totalRounds(room), roundSeconds:roundDuration(room)/1000, maxPlayers:MAX_PLAYERS, remaining:freshProducts(room).length, usedCount:room.used.size, endsAt:(playing||choosing)?room.endsAt:null, revealUntil:exposing?room.revealUntil:null, artistId:room.artistId||null, artistName:artist?.name||null, choices, selected:!!product, artistPrompt:room.mode==='draw'&&player.id===room.artistId&&playing?product?.family:null, drawLines:room.mode==='draw'?(room.drawLines||[]):[],
     image:product?`/api/image/${room.code}/${room.round}?v=${room.gameId}`:null,
     revealOrder:room.revealOrder, answer:exposing?product?.name:null, answerFamily:exposing?product?.family:null,
     productUrl:exposing?product?.url||null:null, skuHint:room.mode==='sku'&&playing&&product?skuHint(product.sku,Math.max(0,(ROUND_MS-(room.endsAt-Date.now()))/1000)):null, skuAnswer:room.mode==='sku'&&exposing?product?.sku:null,
@@ -229,7 +229,7 @@ function publicState(room,player){
 }
 function sseWrite(res,obj){try{res.write('data: '+JSON.stringify(obj)+'\n\n');}catch{}}
 function sendState(room){for(const player of room.players){const r=streams.get(player.token);if(r) sseWrite(r, publicState(room,player));}}
-function cancelTimers(room){clearTimeout(room.roundTimer);clearTimeout(room.nextTimer);room.roundTimer=null;room.nextTimer=null;}
+function cancelTimers(room){clearTimeout(room.roundTimer);clearTimeout(room.nextTimer);for(const t of room.hintTimers||[])clearTimeout(t);room.hintTimers=[];room.roundTimer=null;room.nextTimer=null;}
 function closeRoom(room){
   cancelTimers(room);
   for(const player of room.players){
@@ -283,6 +283,7 @@ function startRound(room){
   }else{
     room.phase='playing';room.endsAt=Date.now()+ROUND_MS;
     room.roundTimer=setTimeout(()=>endRound(room),ROUND_MS);
+    if(room.mode==='sku')room.hintTimers=[9,18,27,36].map(n=>setTimeout(()=>{if(room.phase==='playing')sendState(room);},n*1000));
   }
   sendState(room);
 }
