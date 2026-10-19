@@ -10,6 +10,8 @@ const ROOT = path.join(__dirname, 'public');
 const ROUND_MS = 45_000;
 const REVEAL_MS = 6_000;
 const ROUND_COUNT = 10;
+const DRAW_MS=30000, CHOOSE_MS=15000;
+const MODES=new Set(['pixel','sku','draw']);
 const MAX_PLAYERS = 20;
 const rooms = new Map();
 const sessions = new Map();
@@ -66,7 +68,9 @@ const BANK = [
   ['Scrunch','Scrunch pendant in brass','scrunch-80cm-wide-pendant-in-brass','pendant'],
   ['Alvis','Alvis pendant in brass and chrome','alvis-pendant-in-brass-and-chrome','pendant'],
   ['Lolita','Larger Lolita table lamp in a stone glaze','lolita-table-lamp-in-a-stone-glaze','ceramic'],
-].map(([family, name, handle, type]) => ({family, name, handle, type, url:`https://www.pooky.com/products/${handle}`, image:null, mime:null, photo:false}));
+].map(([family, name, handle, type]) => ({family, name, handle, type, url:`https://www.pooky.com/products/${handle}`, image:null, mime:null, photo:false,sku:null}));
+const VERIFIED_SKUS={Ernest:'TLRLEARBUN100BRABRA',Twinky:'RLTWI099BLABRA',Reed:'TLRLREEBUN100IROBNZ',Orlando:'TLRLORLBUN100ALUANS',Karnak:'TLRLKARBUN100BRAMAR'};
+for(const p of BANK)if(VERIFIED_SKUS[p.family])p.sku=VERIFIED_SKUS[p.family];
 
 function drawDemoSvg(item) {
   // Offline fallback so the game can still be tested without an internet connection.
@@ -110,6 +114,8 @@ async function hydrate(item){
       if(response.ok){
         const product=await response.json();
         img=imageUrl(product.featured_image || product.images?.[0]);
+        const sku=String(product.variants?.find(v=>v.available)?.sku||product.variants?.[0]?.sku||'').trim();
+        if(/^[A-Za-z0-9_-]{5,40}$/.test(sku))item.sku=sku;
       }
     }catch{}
     if(!img){
@@ -119,6 +125,8 @@ async function hydrate(item){
         const meta=html.match(/<meta[^>]*(?:property|name)=["'](?:og:image|twitter:image)["'][^>]*content=["']([^"']+)["']/i)
           ||html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*(?:property|name)=["'](?:og:image|twitter:image)["']/i);
         if(meta)img=imageUrl(meta[1].replace(/&amp;/g,'&'));
+        const found=html.match(/Product Code[^A-Z0-9]{0,100}([A-Z0-9]{6,40})/i);
+        if(found&&!item.sku)item.sku=found[1];
       }
     }
     if(!img) throw Error('Could not find a Pooky product image');
@@ -160,21 +168,33 @@ function withinOneEdit(a,b){
 }
 const identity=item=>norm(item.family);
 function freshProducts(room){
-  const pool=room.useCustom&&room.custom.length>=ROUND_COUNT?room.custom:BANK;
-  return pool.filter(item=>!room.used.has(identity(item)));
+  const pool=room.useCustom&&room.custom.length>=ROUND_COUNT&&room.mode!=='sku'?room.custom:BANK;
+  return pool.filter(item=>!room.used.has(identity(item))&&(room.mode!=='sku'||Boolean(item.sku)));
 }
+const totalRounds=room=>room.mode==='draw'?(room.drawOrder?.length||room.players.length*2):ROUND_COUNT;
+const requiredProducts=room=>totalRounds(room);
+const roundDuration=room=>room.mode==='draw'?DRAW_MS:ROUND_MS;
+const skuNorm=val=>String(val||'').replace(/[^a-z0-9]/gi,'').toUpperCase();
+const skuHint=(sku,elapsed)=>{
+  const text=skuNorm(sku),phase=Math.min(5,Math.floor(elapsed/9));
+  const visible=Math.min(text.length,Math.ceil(text.length*phase/6));
+  return text.slice(0,visible)+'•'.repeat(text.length-visible);
+};
 
 function playerFor(tok){const roomCode=sessions.get(tok);const room=rooms.get(roomCode);if(!room)return null;const player=room.players.find(p=>p.token===tok);return player?{room,player}:null;}
 function publicState(room,player){
   const playing=room.phase==='playing';
   const exposing=room.phase==='reveal';
-  const product=(playing||exposing) ? room.deck[room.round] : null;
+  const choosing=room.phase==='choosing';
+  const product=(playing||exposing)?room.deck[room.round]:null;
+  const artist=room.players.find(p=>p.id===room.artistId);
+  const choices=choosing&&room.mode==='draw'&&player.id===room.artistId?(room.choices||[]).map((p,i)=>({name:p.name,family:p.family,image:'/api/choice-image/'+room.code+'/'+i+'?token='+player.token})):[];
   return {
-    code:room.code, phase:room.phase, you:player.id, host:room.host, round:room.round+1,
-    total:ROUND_COUNT, roundSeconds:ROUND_MS/1000, maxPlayers:MAX_PLAYERS, remaining:freshProducts(room).length, usedCount:room.used.size, endsAt:playing?room.endsAt:null, revealUntil:exposing?room.revealUntil:null,
+    code:room.code, mode:room.mode, phase:room.phase, you:player.id, host:room.host, round:room.round+1,
+    total:totalRounds(room), roundSeconds:roundDuration(room)/1000, maxPlayers:MAX_PLAYERS, remaining:freshProducts(room).length, usedCount:room.used.size, endsAt:(playing||choosing)?room.endsAt:null, revealUntil:exposing?room.revealUntil:null, artistId:room.artistId||null, artistName:artist?.name||null, choices, selected:!!product, drawLines:room.mode==='draw'?(room.drawLines||[]):[],
     image:product?`/api/image/${room.code}/${room.round}?v=${room.gameId}`:null,
-    revealOrder:room.revealOrder, answer:exposing?product.name:null, answerFamily:exposing?product.family:null,
-    productUrl:exposing?product.url||null:null,
+    revealOrder:room.revealOrder, answer:exposing?product?.name:null, answerFamily:exposing?product?.family:null,
+    productUrl:exposing?product?.url||null:null, skuHint:room.mode==='sku'&&playing&&product?skuHint(product.sku,Math.max(0,(ROUND_MS-(room.endsAt-Date.now()))/1000)):null, skuAnswer:room.mode==='sku'&&exposing?product?.sku:null,
     winner:exposing?room.roundWinner:null,
     players:room.players.map(p=>({id:p.id,name:p.name,score:p.score,wins:p.wins,online:p.online,roundPlace:p.roundPlace||0,roundPoints:p.roundPoints||0})),
     guessEvent:room.guessEvent||null, placements:room.roundPlacements||[],
@@ -279,7 +299,7 @@ async function handle(req,res){
     let key;do{key=code();}while(rooms.has(key));
     const tok=token(),player={id:'P1',name,token:tok,score:0,wins:0,online:false,lastGuess:0};
     const excludes=Array.isArray(b.seen)?b.seen.slice(0,500).filter(v=>typeof v==='string').map(v=>norm(v.slice(0,100))).filter(Boolean):[];
-    const room={code:key,host:'P1',players:[player],phase:'lobby',round:-1,deck:[],history:[],custom:[],useCustom:false,used:new Set(excludes),gameId:'0',guessSeq:0,guessEvent:null,roundPlacements:[],createdAt:Date.now()};
+    const room={code:key,host:'P1',players:[player],phase:'lobby',round:-1,deck:[],history:[],custom:[],useCustom:false,used:new Set(excludes),mode:MODES.has(b.mode)?b.mode:'pixel',gameId:'0',guessSeq:0,guessEvent:null,roundPlacements:[],createdAt:Date.now()};
     rooms.set(key,room);sessions.set(tok,key);return reply(res,{ok:true,token:tok,state:publicState(room,player)});
   }
   if(pathname==='/api/join'){
@@ -312,12 +332,13 @@ async function handle(req,res){
     if(player.id!==room.host)return fail(res,'Only the host can start a game.');
     if(room.players.length<2)return fail(res,'Invite at least one other player first.');
     if(!['lobby','finished'].includes(room.phase))return fail(res,'Game already in progress.');
-    if(freshProducts(room).length<ROUND_COUNT)return fail(res,`Only ${freshProducts(room).length} unused products remain. Reset product history to play another 10-round match.`);
+    if(freshProducts(room).length<requiredProducts(room))return fail(res,`Only ${freshProducts(room).length} new products remain for ${room.mode}; need ${requiredProducts(room)}. Reset product history when exhausted.`);
     startGame(room);return reply(res,{ok:true});
   }
   if(pathname==='/api/guess'){
     if(room.phase!=='playing')return fail(res,'Round is not accepting guesses.');
     const now=Date.now();if(now>=room.endsAt){endRound(room);return fail(res,'Time ran out!');}
+    if(room.mode==='draw'&&player.id===room.artistId)return fail(res,'You are drawing — everyone else guesses!');
     if(player.roundPlace)return reply(res,{ok:true,alreadyCorrect:true,place:player.roundPlace,points:player.roundPoints});
     const raw=String(b.guess||'').trim().slice(0,90);
     const guess=norm(raw);if(guess.length<2)return fail(res,'Type a product name.');
@@ -327,12 +348,13 @@ async function handle(req,res){
     const fullTokens=norm(current.name).split(' ');
     const family=norm(current.family);
     const reasonableLongName=guess.startsWith(family+' ') && guess.split(' ').every(word=>fullTokens.includes(word));
-    const correct=valid.some(answer=>withinOneEdit(guess,answer))||reasonableLongName;
+    const correct=room.mode==='sku'?skuNorm(raw)===skuNorm(current.sku):valid.some(answer=>withinOneEdit(guess,answer))||reasonableLongName;
     let place=0,points=0;
     if(correct){
       place=room.roundPlacements.length+1;
       const seconds=Math.max(0,Math.ceil((room.endsAt-now)/1000));
-      points=Math.max(50,Math.round(110+seconds*12-(place-1)*60));
+      points=Math.max(50,Math.round(110+seconds*(room.mode==='draw'?10:12)-(place-1)*60));
+      if(room.mode==='draw'){const artist=room.players.find(p=>p.id===room.artistId);if(artist)artist.score+=Math.max(35,75-(place-1)*10);}
       player.score+=points;
       player.roundPlace=place;player.roundPoints=points;
       if(place===1)player.wins++;
