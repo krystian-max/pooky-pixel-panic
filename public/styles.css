@@ -28,3 +28,51 @@
 @media(max-width:510px){.scoreboard{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.scorebox{padding:10px;gap:6px}.score-rank{font-size:10px;top:6px;right:6px}.scorebox .avatar{width:30px;height:30px;flex-basis:30px}.score-points{font-size:21px}.score-name{font-size:11px}.result-scores{grid-template-columns:repeat(2,minmax(0,1fr))}.result-scores>div{padding:12px}}
 /* Persistent escape controls for both hosts and participants. */
 .session-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-wrap:wrap;padding:14px 0 0}.session-label{font-weight:800;color:#978a8e;font-size:12px;letter-spacing:1.3px;text-transform:uppercase}.session-toolbar .exit-room-button{font-size:12px;padding:10px 15px;border-color:#d9cfc8}.session-toolbar .exit-room-button:hover{background:#fff0e9;color:#a43d2b;border-color:#e7b7a8}@media(max-width:510px){.session-toolbar{justify-content:space-between}.session-toolbar .exit-room-button{white-space:normal;text-align:center}}
+
+
+/* Pooky-inspired editorial refresh — warm paper, hand-inked type, confident plum and lime. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap');
+:root{--ink:#27201f;--inksoft:#695d56;--bg:#f8f4eb;--paper:#fffdf7;--line:#ded5c5;--orange:#d85a31;--deeporange:#b8482a;--violet:#664a60;--lime:#d5eab1;--dark:#463048;--shadow:0 14px 38px #2d201710}
+body{background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif}
+h1,h2,h3,.game-title,.room-code,.winner-hero strong,.score-points,.timer-num,.wordmark,.wordmark strong{font-family:'DM Serif Display',Georgia,serif;letter-spacing:-.025em}
+h1,.game-title{font-weight:400!important}
+.site-shell{max-width:1700px}
+.topbar{height:90px;border-color:#d9d0bf}
+.wordmark{font-size:27px;letter-spacing:-1px}.wordmark strong{font-size:24px;font-weight:400}.logo-sun{color:#b25888;font-size:35px}
+.topbar-end{color:#7d6a60}.dotlive{background:#9dbb77}
+.eyebrow{color:#a34667;letter-spacing:2px}.eyebrow:before{background:#a34667}
+.hero h1{font-size:clamp(80px,8vw,134px);letter-spacing:-.045em}
+.hero-art{background:#c6deaa;border-color:#b2c997;border-radius:12px}
+.art-stage{border-radius:5px}.art-sticker{border-radius:3px}
+.panel,.form-panel,.timer-card,.guess-card,.image-stage,.winner-hero,.history,.round-result{border-radius:9px}
+.btn,.field,.pill{border-radius:3px}.btn-primary{background:#533752}.btn-primary:hover:not(:disabled){background:#352435}
+.btn-dark{background:#523b52}.btn-white{background:#fffdf8}
+.room-code{color:#704665}.game{max-width:1440px}
+.game-title{font-size:43px}
+.image-stage{background:#eee9dc;border:1px solid #cfc7b7;min-height:520px}
+.timer-card{background:#503551}.timer-num{font-size:89px;letter-spacing:-3px}
+.timer-card:before{background:#a57994}.progress-fill{background:#dcefae}
+.guess-card h3{font-size:33px;font-weight:400}
+.stage-tag{border-radius:3px}.stage-tag.orange{background:#583b54}
+.leaderboard-heading{font:400 31px 'DM Serif Display',Georgia,serif;margin:28px 0 12px;color:#553952}
+.scoreboard{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:13px}
+.scorebox{position:relative;overflow:visible;background:#fffdf6;border:1px solid #d8cbb9;border-radius:6px;padding:22px 16px;min-height:112px;transition:background .15s,color .15s}
+.scorebox.leader{background:#f4dfca;border-color:#d8b79c}.scorebox.your-score{outline:2px solid #6e4d66}
+.score-content{min-width:0}.score-name{font-size:13px;color:#544445}.score-points{font-size:32px}
+.round-rank{font-weight:800;font-size:11px;margin-top:4px;color:#876d75}
+.scorebox .avatar{background:#eadfcf;color:#604557;border-radius:50%;font-size:18px}
+.scorebox.guess-wrong{animation:wrong-guess 580ms ease-in-out 2;background:#fbe2dc;border-color:#d9444e;box-shadow:0 0 0 3px #e63c4a44;color:#8b2132;z-index:4}
+.scorebox.guess-right{animation:right-guess 640ms ease-in-out 2;background:#d4eabe;border-color:#639d52;box-shadow:0 0 0 3px #55975344;color:#24552a;z-index:4}
+@keyframes wrong-guess{0%,100%{transform:translateX(0)}18%,58%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+@keyframes right-guess{0%,100%{transform:scale(1) rotate(0)}20%{transform:scale(1.035) rotate(-2deg)}55%{transform:scale(1.04) rotate(2deg)}}
+.guess-bubble{position:absolute;left:50%;bottom:calc(100% + 13px);transform:translateX(-50%);z-index:10;white-space:normal;max-width:270px;min-width:140px;text-align:center;padding:11px 14px;font-size:13px;font-weight:800;border-radius:7px;box-shadow:0 8px 24px #2b232633;overflow-wrap:anywhere;pointer-events:none}
+.guess-bubble:after{content:'';position:absolute;left:calc(50% - 8px);top:100%;border:8px solid transparent}
+.guess-bubble.incorrect{background:#bb3544;color:white}.guess-bubble.incorrect:after{border-top-color:#bb3544}
+.guess-bubble.correct{background:#32763f;color:white}.guess-bubble.correct:after{border-top-color:#32763f}
+.product-answer{margin-top:20px;padding:24px 22px;text-align:center;background:#f3e4be;border:2px solid #a87952;box-shadow:0 7px 0 #dac5a2}
+.product-answer .answer-eyebrow{font-size:12px;letter-spacing:2.5px;font-weight:800;color:#70534f}
+.product-answer h2{font:400 clamp(30px,3.5vw,52px)/1.07 'DM Serif Display',Georgia,serif;color:#482b43;margin:10px 0 13px;overflow-wrap:anywhere}
+.product-answer p{font-size:13px;margin:15px 0 0;color:#5f4d44}
+.product-answer a{color:#663e5e;font-weight:800}
+@media(max-width:760px){.image-stage{min-height:auto}.game-title{font-size:32px}.timer-num{font-size:65px}.scoreboard{grid-template-columns:repeat(2,minmax(0,1fr))}.scorebox{padding:16px 12px}.guess-bubble{min-width:95px;max-width:180px;font-size:11px}.leaderboard-heading{font-size:27px}}
+@media(prefers-reduced-motion:reduce){.scorebox.guess-right,.scorebox.guess-wrong{animation:none}}
