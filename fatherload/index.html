@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b101a">
+  <meta name="description" content="Fatherload — an original deep-earth mining adventure. Dig, drill, upgrade and return alive.">
+  <title>FATHERLOAD — Dig deep. Get rich. Don't explode.</title>
+  
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+:root{--bg:#0b1019;--panel:#121b27;--panel2:#172230;--line:#26374a;--muted:#75869a;--text:#ecf2f8;--orange:#ff9d38;--teal:#69e8c5;--red:#ff7272}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',Arial,sans-serif,system-ui,sans-serif}body{background-image:radial-gradient(ellipse 60% 50% at 50% -10%,#22354d 0,transparent 75%);overscroll-behavior:none}.app{max-width:1572px;margin:auto;padding:24px 29px 18px}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.brand-icon{display:grid;place-items:center;width:44px;height:44px;background:#ff993d;color:#172130;clip-path:polygon(50% 0,95% 23%,95% 75%,50% 100%,5% 75%,5% 23%);font-size:24px}.brand h1{margin:0;font:900 37px/.83 'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:1.2px}.brand h1 span,.hero-logo span{color:var(--orange)}.brand small{display:block;font:700 9px/1.3 'DM Sans',Arial,sans-serif;letter-spacing:3px;color:#8496a9;margin-top:7px}.top-right{display:flex;align-items:center;gap:10px}.version{font:700 10px 'DM Sans',Arial,sans-serif;letter-spacing:2px;color:#6d8193;margin-right:13px}.small-btn{background:#182330;border:1px solid #2a3948;color:#afc0ce;font:800 10px 'DM Sans',Arial,sans-serif;letter-spacing:1.2px;padding:12px 13px;border-radius:5px;cursor:pointer}.small-btn:hover{border-color:#607790;color:white}.layout{display:grid;grid-template-columns:minmax(0,1fr) 287px;gap:17px}.game-column{min-width:0}.stats{display:grid;grid-template-columns:1.12fr 1fr 1fr 1fr 1fr;gap:1px;background:#253548;border:1px solid #253548;border-radius:7px 7px 0 0;overflow:hidden}.stat{background:#15202d;min-height:92px;padding:14px 15px 12px}.stat-label{font:800 10px 'DM Sans',Arial,sans-serif;color:#95a6b7;letter-spacing:1.4px;display:flex;justify-content:space-between;white-space:nowrap}.stat>strong{font:900 31px/1.15 'Barlow Condensed','Arial Narrow',Arial,sans-serif;display:block;margin:3px 0 4px;letter-spacing:.5px}.stat strong small{font-size:16px;color:var(--muted)}.stat:first-child>strong{color:var(--teal)}.stat-sub{display:block;color:#73869a;font:800 9px 'DM Sans',Arial,sans-serif;letter-spacing:1px;white-space:nowrap}.stat-meter .stat-label{margin-bottom:17px}.meter{width:100%;height:9px;background:#31404c;border-radius:2px;overflow:hidden;margin:0 0 12px}.fill{height:100%;width:100%;background:var(--teal);transition:width .15s}.fill.fuel{background:#f3aa52}.fill.hull{background:#75dfb4}.fill.heat{background:#58c4ec}.stage-wrap{position:relative;background:#080e16;border:1px solid #304254;border-top:0;overflow:hidden;line-height:0}#game{display:block;width:100%;height:auto;aspect-ratio:1120/690;outline:none;cursor:crosshair;image-rendering:auto}.depth-badge{position:absolute;top:14px;left:14px;background:#102c34d6;border:1px solid #478b8b80;letter-spacing:1.4px;color:#87eed1;font:800 10px 'DM Sans',Arial,sans-serif;padding:10px 13px;border-radius:3px;pointer-events:none;line-height:1}.crosshair-message{position:absolute;left:50%;top:22%;transform:translate(-50%,-8px);min-width:100px;text-align:center;opacity:0;color:white;font:900 24px 'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:1.4px;text-shadow:0 2px 12px black;pointer-events:none;transition:opacity .2s,transform .2s;line-height:1.2}.crosshair-message.show{opacity:1;transform:translate(-50%,0)}.dock{display:grid;grid-template-columns:1.04fr 1fr 1fr 1.12fr 1.07fr;background:#141e2b;border:1px solid #2b3b4d;border-top:0;border-radius:0 0 7px 7px;padding:9px;gap:8px}.dock-btn{min-height:56px;border:1px solid #33465a;border-radius:4px;background:#202d3b;color:#ecf4fa;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 5px;cursor:pointer;font:800 13px 'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:1.2px}.dock-btn>span:first-child{font:800 22px 'DM Sans',Arial,sans-serif;color:#a2b8ce}.dock-btn small{display:block;color:#8b9aaa;font:800 9px 'DM Sans',Arial,sans-serif;letter-spacing:.7px;margin-top:3px}.dock-btn:hover{filter:brightness(1.18)}.dock-btn:active{transform:translateY(1px)}.dock-btn.green{background:#143f3e;border-color:#37776d}.dock-btn.green>span:first-child{color:#66dec0}.dock-btn.orange{background:#4b321e;border-color:#98612e}.dock-btn.orange>span:first-child{color:#ffb154}.dock-btn.locked{opacity:.48}.control-note{font:700 10px 'DM Sans',Arial,sans-serif;color:#8b99a9;text-align:center;padding:15px 0 8px;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:5px;letter-spacing:.4px}.control-note kbd{font:800 9px 'DM Sans',Arial,sans-serif;border:1px solid #415366;background:#1a2634;color:#d4e1ee;border-radius:3px;min-width:17px;padding:3px 5px}.control-sep{color:#536779;margin:0 9px}.sidebar{display:flex;flex-direction:column;gap:12px}.side-head{font:800 10px 'DM Sans',Arial,sans-serif;letter-spacing:1.3px;color:#b5c7d7;display:flex;align-items:center;padding:6px 0 9px;white-space:nowrap}.side-dot{background:var(--orange);border-radius:50%;width:7px;height:7px;margin-right:9px}.live{color:#65e3b9;font-size:9px;margin-left:auto}.mission-card{background:linear-gradient(145deg,#4d321f,#272a2d 85%);padding:19px;border-radius:6px;border:1px solid #79502f;min-height:186px}.eyebrow{font:800 10px 'DM Sans',Arial,sans-serif;letter-spacing:1.3px;color:#ffc487}.mission-card .eyebrow{display:flex;justify-content:space-between}.mission-card h2{font:900 26px 'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:.4px;margin:12px 0 6px}.mission-card p{color:#d5cbc2;font-size:11px;line-height:1.7;margin:0 0 17px}.mission-progress{height:5px;background:#6b5543;border-radius:5px;overflow:hidden}.mission-progress div{height:100%;width:0%;background:#ffc079;transition:width .3s}.mission-count{color:#c8ad92;text-align:right;font:800 9px 'DM Sans',Arial,sans-serif;letter-spacing:.6px;margin-top:7px}.panel{background:#131e2a;border:1px solid #29394b;border-radius:6px;padding:17px 16px}.panel-title{font:800 11px 'DM Sans',Arial,sans-serif;letter-spacing:1.1px;display:flex;justify-content:space-between;color:#d7e4ee}.panel-title>span{color:#93a7b9}.cargo-track{height:6px;background:#334356;margin:16px 0 15px;overflow:hidden}.cargo-track div{width:0;height:100%;background:var(--teal);transition:width .25s}.cargo-items{min-height:72px;max-height:156px;overflow:auto}.empty-cargo{text-align:center;color:#7f92a4;font:800 10px/2 'DM Sans',Arial,sans-serif;padding:9px 0}.empty-cargo span{font-size:10px;color:#526579}.cargo-entry{display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:11px;color:#b7c8d6}.cargo-entry i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:8px;vertical-align:-1px}.cargo-entry strong{color:#e8f5fa}.cargo-value{border-top:1px solid #29394b;display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:13px}.cargo-value span{font:800 10px 'DM Sans',Arial,sans-serif;letter-spacing:1px;color:#97adbe}.cargo-value strong{font:900 23px 'Barlow Condensed','Arial Narrow',Arial,sans-serif;color:var(--teal)}.gear-list{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:16px}.gear-list span,.item-row span{font:700 10px 'DM Sans',Arial,sans-serif;color:#8ca0b1;letter-spacing:.5px}.gear-list strong,.item-row strong{font:800 10px 'DM Sans',Arial,sans-serif;color:#d6e6f1}.equipment{padding-bottom:10px}.item-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #253647}.item-row:last-child{border-bottom:0}.tips{display:flex;gap:10px;padding:13px 7px;color:#92aabc}.tips .signal{color:#f2a353}.tips strong{font:800 10px 'DM Sans',Arial,sans-serif;letter-spacing:1px}.tips p{font-size:11px;line-height:1.65;margin:7px 0}footer{color:#596d80;font:800 9px 'DM Sans',Arial,sans-serif;letter-spacing:1.5px;text-align:center;margin-top:18px}footer span{padding:0 12px;color:#355166}.overlay{position:fixed;inset:0;background:#050c14d9;backdrop-filter:blur(9px);display:flex;align-items:center;justify-content:center;z-index:10;padding:18px}.hidden{display:none!important}.start-card{position:relative;background:linear-gradient(140deg,#18293a,#111921);max-width:565px;width:100%;border:1px solid #546277;box-shadow:0 25px 100px #0009;text-align:center;padding:32px 39px 35px;border-radius:8px;overflow:hidden}.start-eyebrow{font:800 11px 'DM Sans',Arial,sans-serif;letter-spacing:3px;color:#87bdc2}.hero-logo{font:900 clamp(48px,9vw,89px)/1 'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:1.3px;margin-top:10px;text-shadow:0 7px 25px #0008}.hero-tagline{font:800 12px 'DM Sans',Arial,sans-serif;letter-spacing:3px;color:#bdcfda;margin:8px 0 15px}.hero-art{height:168px;position:relative;background:linear-gradient(#173249 0 16%,#405269 16% 20%,#896447 20% 35%,#5d443b 35% 55%,#3d3341 55% 75%,#292945 75%);border-radius:5px;overflow:hidden;box-shadow:inset 0 0 40px #0007;margin:0 0 18px}.hero-earth{position:relative;width:100%;height:100%;background:repeating-linear-gradient(115deg,transparent 0 22px,#ffffff07 23px 25px)}.hero-ore{color:#80e6d1;position:absolute;font-size:32px;text-shadow:0 0 17px currentColor}.ore-1{left:14%;top:45%;color:#f3bb5a}.ore-2{left:69%;top:55%;color:#aa8efb}.ore-3{left:83%;top:22%;color:#cbe4fc}.ore-4{left:38%;top:78%;color:#71e8bc}.hero-rig{position:absolute;left:48%;top:26%;font-size:57px;transform:rotate(-25deg);color:#ffac52;text-shadow:0 4px 22px black}.start-card p{line-height:1.7;font-size:13px;color:#c4d3df;margin:0 0 22px}.start-buttons{display:flex;gap:10px;justify-content:center}.primary,.secondary{border:0;color:#1c242c;background:#ffac54;font:900 16px 'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:1px;border-radius:4px;padding:15px 28px;cursor:pointer}.primary span{margin-left:15px}.primary:hover{background:#ffc281}.secondary{background:#33465a;color:#d9e8f2}.start-controls{color:#8298a8;font:800 9px 'DM Sans',Arial,sans-serif;letter-spacing:1px;margin-top:19px}.start-controls span{color:#df9b59;padding:0 7px}.modal{width:min(750px,96vw);max-height:min(86vh,760px);overflow:hidden;display:flex;flex-direction:column;background:#131f2c;border:1px solid #506279;border-radius:8px;box-shadow:0 30px 100px #000b}.modal-top{padding:25px 27px 12px;display:flex;justify-content:space-between;align-items:start}.modal-top h2{font:900 37px 'Barlow Condensed','Arial Narrow',Arial,sans-serif;margin:6px 0;letter-spacing:.7px}.close-btn{background:#26394b;color:#e6f0fb;border:1px solid #3a5065;width:36px;height:36px;border-radius:4px;cursor:pointer}.modal-description{font-size:12px;color:#9fb3c4;margin:0 27px 16px;line-height:1.7}.modal-content{overflow:auto;padding:0 27px 24px}.shop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.shop-item{background:#1e2d3c;border:1px solid #35495c;border-radius:5px;padding:15px;display:flex;flex-direction:column;gap:6px}.shop-item .shop-heading{display:flex;align-items:center;gap:10px}.shop-symbol{display:grid;place-items:center;border-radius:4px;background:#3c4140;width:39px;height:39px;color:#ffa856;font-size:22px}.shop-name{font:900 17px 'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:.7px}.shop-tier{font:800 9px 'DM Sans',Arial,sans-serif;color:#a3b7c6;letter-spacing:1px}.shop-desc{font-size:11px;line-height:1.6;color:#afc0cc;min-height:32px}.shop-buy{display:flex;align-items:center;gap:10px;justify-content:space-between;margin-top:auto;padding-top:4px}.shop-buy button{background:#ffae57;border:0;color:#182330;border-radius:3px;padding:10px 14px;font:800 11px 'DM Sans',Arial,sans-serif;cursor:pointer}.shop-buy button:disabled{opacity:.4;cursor:default}.shop-price{color:#7ee6c8;font:900 18px 'Barlow Condensed','Arial Narrow',Arial,sans-serif}.modal-footer{border-top:1px solid #344a5f;padding:15px 27px;display:flex;justify-content:space-between;align-items:center;font:700 10px 'DM Sans',Arial,sans-serif;letter-spacing:1.1px;color:#8298aa}.modal-footer strong{font:900 24px 'Barlow Condensed','Arial Narrow',Arial,sans-serif;color:#75e5c5}.mobile-controls{display:none}@media(max-width:1200px){.app{padding:17px}.layout{grid-template-columns:minmax(0,1fr) 244px;gap:12px}.sidebar{gap:9px}.panel{padding:14px 12px}.stat{padding:12px 9px}.stat>strong{font-size:28px}.version{display:none}.mission-card{padding:14px}.dock-btn{font-size:11px}}@media(max-width:850px){.layout{display:flex;flex-direction:column}.sidebar{display:grid;grid-template-columns:repeat(2,1fr);align-items:start}.side-head{grid-column:1/-1;padding:10px 0 0}.tips{grid-column:1/-1}.stat{min-height:79px;padding:9px 6px}.stat>strong{font-size:24px}.stat-label{font-size:8px}.stat-sub{font-size:8px}.stat-meter .stat-label{margin-bottom:15px}.topbar{margin-bottom:14px}.brand h1{font-size:31px}.control-note{font-size:9px}.dock{gap:4px;padding:5px}.dock-btn{font-size:11px}.dock-btn>span:first-child{font-size:15px}.dock-btn small{font-size:7px}}@media(max-width:600px){.app{padding:10px}.brand h1{font-size:27px}.brand small{font-size:7px;letter-spacing:1.4px}.brand-icon{width:35px;height:35px}.top-right{gap:4px}.small-btn{padding:9px 7px;font-size:8px}.stats{grid-template-columns:repeat(5,minmax(0,1fr))}.stat{min-height:69px}.stat-label{font-size:8px;letter-spacing:0}.stat>strong{font-size:20px}.stat-sub{font-size:7px;letter-spacing:0;overflow:hidden}.stat-meter .stat-label{margin-bottom:12px}.meter{height:6px;margin-bottom:9px}.dock{grid-template-columns:repeat(5,minmax(0,1fr))}.dock-btn{min-height:53px;flex-direction:column;gap:3px;padding:5px 1px;font-size:9px;letter-spacing:0}.dock-btn small{display:none}.dock-btn>span:first-child{font-size:17px}.mobile-controls{display:flex;justify-content:space-between;padding:10px 8px;background:#121e2b}.dpad{display:grid;grid-template-columns:repeat(3,43px);grid-template-rows:repeat(2,38px);gap:3px}.touch-btn{touch-action:none;border:1px solid #536578;background:#293949;border-radius:6px;color:#e5f4fa;font-size:16px;font-weight:900}.touch-btn:active,.touch-btn.pressed{background:#f8aa52;color:#112332}.up{grid-column:2;grid-row:1}.left{grid-column:1;grid-row:2}.down{grid-column:2;grid-row:2}.right{grid-column:3;grid-row:2}.touch-actions{display:flex;gap:7px;align-items:center}.touch-actions button{background:#3e3d35;border:1px solid #a0824d;border-radius:5px;color:#ffd09c;font:800 10px 'DM Sans',Arial,sans-serif;padding:12px 9px;max-width:74px}.sidebar{grid-template-columns:1fr 1fr}.mission-card{min-height:0}.mission-card h2{font-size:23px}.gear-panel{grid-column:1/-1}.gear-list{grid-template-columns:1fr auto 1fr auto}.equipment{grid-column:1/-1}.panel-title{font-size:10px}.empty-cargo{font-size:8px}.hero-tagline{letter-spacing:1px}.start-card{padding:25px 17px}.shop-grid{grid-template-columns:1fr}.control-note{line-height:2}footer{font-size:8px;line-height:2}}
+
+/* Keep the logo intact when webfonts are unavailable. */
+.hero-logo{font-size:clamp(43px,7vw,76px);letter-spacing:-1px;white-space:nowrap}
+
+</style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-icon">◆</span><div><h1>FATHER<span>LOAD</span><small>MINING & EXCAVATION CO.</small></h1></div></div>
+      <div class="top-right"><span class="version">DEEP EARTH EXPEDITION • V1.0</span><button id="audioBtn" class="small-btn" aria-label="Toggle sound">♪ SOUND OFF</button><button id="helpBtn" class="small-btn">? HOW TO PLAY</button></div>
+    </header>
+    <main class="layout">
+      <section class="game-column">
+        <div class="stats">
+          <div class="stat"><span class="stat-label">BALANCE</span><strong id="moneyValue">$250</strong><span class="stat-sub">MINING PROFITS</span></div>
+          <div class="stat"><span class="stat-label">DEPTH</span><strong id="depthValue">0 <small>ft</small></strong><span class="stat-sub" id="deepestValue">BEST: 0 ft</span></div>
+          <div class="stat stat-meter"><span class="stat-label">FUEL <span id="fuelPercent">100%</span></span><div class="meter"><div id="fuelBar" class="fill fuel"></div></div><span class="stat-sub" id="fuelUnits">120 / 120 L</span></div>
+          <div class="stat stat-meter"><span class="stat-label">HULL <span id="hullPercent">100%</span></span><div class="meter"><div id="hullBar" class="fill hull"></div></div><span class="stat-sub" id="hullUnits">100 / 100 HP</span></div>
+          <div class="stat stat-meter"><span class="stat-label">HEAT <span id="heatPercent">0%</span></span><div class="meter"><div id="heatBar" class="fill heat"></div></div><span class="stat-sub" id="heatUnits">ENGINE TEMP: COOL</span></div>
+        </div>
+        <div class="stage-wrap"><canvas id="game" width="1120" height="690" tabindex="0" aria-label="Fatherload mining game. Use WASD or arrow keys to move and dig."></canvas><div class="crosshair-message" id="toast" aria-live="polite"></div><div class="depth-badge" id="depthBadge">SURFACE — SAFE ZONE</div></div>
+        <div class="dock">
+          <button id="sellBtn" class="dock-btn green"><span>◈</span><span>SELL ORE <small id="sellPreview">CARGO EMPTY</small></span></button>
+          <button id="fuelBtn" class="dock-btn"><span>⛽</span><span>REFUEL <small id="fuelPreview">AT SURFACE</small></span></button>
+          <button id="repairBtn" class="dock-btn"><span>✚</span><span>REPAIR <small id="repairPreview">AT SURFACE</small></span></button>
+          <button id="shopBtn" class="dock-btn orange"><span>⚙</span><span>UPGRADES <small>OPEN GARAGE [G]</small></span></button>
+          <button id="supplyBtn" class="dock-btn"><span>✦</span><span>SUPPLIES <small>FUEL & EXPLOSIVES</small></span></button>
+        </div>
+        <div class="mobile-controls" id="mobileControls"><div class="dpad"><button class="touch-btn up" data-key="ArrowUp">▲</button><button class="touch-btn left" data-key="ArrowLeft">◀</button><button class="touch-btn down" data-key="ArrowDown">▼</button><button class="touch-btn right" data-key="ArrowRight">▶</button></div><div class="touch-actions"><button id="touchTank">SPARE FUEL</button><button id="touchBomb">DYNAMITE</button></div></div>
+        <div class="control-note">MOVE & DIG <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> OR <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd><span class="control-sep">·</span> FLY UP <kbd>SPACE</kbd><span class="control-sep">·</span> GARAGE <kbd>G</kbd><span class="control-sep">·</span> FUEL <kbd>F</kbd><span class="control-sep">·</span> DYNAMITE <kbd>X</kbd></div>
+      </section>
+      <aside class="sidebar">
+        <div class="side-head"><span class="side-dot"></span> LIVE EXPEDITION LOG <span class="live">● LIVE</span></div>
+        <div class="mission-card"><div class="eyebrow">CURRENT OBJECTIVE <span>01 / 04</span></div><h2 id="missionTitle">FIRST PAYDAY</h2><p id="missionText">Mine some ore, return to the surface, and sell your cargo.</p><div class="mission-progress"><div id="missionBar"></div></div><div class="mission-count" id="missionCount">0 / 1 SALES</div></div>
+        <div class="panel"><div class="panel-title">CARGO HOLD <span id="cargoCount">0 / 10</span></div><div class="cargo-track"><div id="cargoBar"></div></div><div id="cargoItems" class="cargo-items"><div class="empty-cargo">NO MINERALS COLLECTED<br><span>Get drilling, boss.</span></div></div><div class="cargo-value"><span>LOAD VALUE</span><strong id="cargoValue">$0</strong></div></div>
+        <div class="panel gear-panel"><div class="panel-title">YOUR RIG <span>MK <span id="rigLevel">I</span></span></div><div class="gear-list"><span>DRILL</span><strong id="gearDrill">MK I</strong><span>TANK</span><strong id="gearTank">MK I</strong><span>ENGINE</span><strong id="gearEngine">MK I</strong><span>CARGO</span><strong id="gearCargo">MK I</strong><span>RADIATOR</span><strong id="gearRadiator">MK I</strong><span>ARMOUR</span><strong id="gearHull">MK I</strong></div></div>
+        <div class="panel equipment"><div class="panel-title">FIELD SUPPLIES</div><div class="item-row"><span>⛽ Spare fuel tanks</span><strong id="tankCount">×0</strong></div><div class="item-row"><span>✹ Dynamite</span><strong id="bombCount">×0</strong></div></div>
+        <div class="tips"><span class="signal">◉</span><div><strong>COMMAND CENTRE</strong><p id="tipText">The deeper you dig, the richer the ore. Keep enough fuel to fly back up!</p></div></div>
+      </aside>
+    </main>
+    <footer>FATHERLOAD © 2026 <span>•</span> AN ORIGINAL MINING ADVENTURE <span>•</span> AUTOSAVES ON THIS DEVICE</footer>
+  </div>
+  <div class="overlay" id="startOverlay"><div class="start-card"><div class="start-eyebrow">INDEPENDENT MINING SIMULATOR</div><div class="hero-logo">FATHER<span>LOAD</span></div><div class="hero-tagline">DIG DEEP. GET RICH. DON'T EXPLODE.</div><div class="hero-art" aria-hidden="true"><div class="hero-earth"><div class="hero-ore ore-1">◆</div><div class="hero-ore ore-2">◆</div><div class="hero-ore ore-3">◆</div><div class="hero-rig">⚒</div><div class="hero-ore ore-4">◆</div></div></div><p>Drill through the earth, mine valuable minerals and make it back to the surface before your fuel runs out. Upgrade your rig to find what lies 1,000 feet below.</p><div class="start-buttons"><button id="playBtn" class="primary big">START MINING <span>→</span></button><button id="resetBtn" class="secondary big" hidden>NEW GAME</button></div><div class="start-controls">ARROW KEYS / WASD TO MOVE & DIG <span>•</span> SPACE TO BOOST UP</div></div></div>
+  <div class="overlay hidden" id="modalOverlay"><div class="modal"><div class="modal-top"><div><div class="eyebrow">FATHERLOAD INDUSTRIAL SUPPLY</div><h2 id="modalTitle">THE JUNK SHOP</h2></div><button id="closeModal" class="close-btn" aria-label="Close">✕</button></div><p id="modalDescription" class="modal-description"></p><div id="modalContent" class="modal-content"></div><div class="modal-footer"><strong id="modalMoney">$250</strong><span>PRESS ESC TO CLOSE</span></div></div></div>
+  <script>
+(() => {
+  'use strict';
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const CW = canvas.width, CH = canvas.height;
+  const T = 36, COLS = 45, ROWS = 240, SURFACE = 7;
+  const SAVE_KEY = 'fatherload-save-v1';
+  const $ = id => document.getElementById(id);
+  const fmt = n => '$' + Math.floor(n).toLocaleString('en-GB');
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  const roman = ['I','II','III','IV','V','VI'];
+  const minerals = {
+    coal:{name:'Coal',value:28,weight:1,color:'#606b78',glow:'#9fa9b7'},
+    copper:{name:'Copper',value:62,weight:1,color:'#ec995e',glow:'#f2b082'},
+    iron:{name:'Iron',value:105,weight:1,color:'#a9bbc6',glow:'#d8e8ed'},
+    silver:{name:'Silver',value:240,weight:1,color:'#c5e4ef',glow:'#f2ffff'},
+    gold:{name:'Gold',value:520,weight:1,color:'#ffcd54',glow:'#ffe798'},
+    ruby:{name:'Ruby',value:1350,weight:2,color:'#f85b78',glow:'#ff9eab'},
+    emerald:{name:'Emerald',value:2300,weight:2,color:'#55e5a8',glow:'#8affcf'},
+    platinum:{name:'Platinum',value:3900,weight:2,color:'#b8d6ff',glow:'#d8efff'},
+    stardust:{name:'Star Crystal',value:5800,weight:2,color:'#b68bff',glow:'#e6c5ff'},
+    relic:{name:'Ancient Relic',value:50000,weight:0,color:'#ffe39c',glow:'#fff1bb'},
+    core:{name:'Earthheart',value:100000,weight:0,color:'#ff7944',glow:'#ffbd6c'}
+  };
+  const upgrades = {
+    drill:{name:'TURBO DRILL',symbol:'⚒',description:'Break through tougher rock and drill faster.',costs:[350,1250,4200,12000,35000],base:'Drilling strength'},
+    tank:{name:'FUEL TANK',symbol:'⛽',description:'Travel farther before you need to refuel.',costs:[300,1000,3500,11000,31000],base:'Fuel capacity'},
+    cargo:{name:'CARGO BAY',symbol:'▣',description:'Bring more valuable minerals home in one trip.',costs:[300,1100,3500,12000,30000],base:'Cargo capacity'},
+    engine:{name:'ROCKET ENGINE',symbol:'➤',description:'Move faster and use less fuel while thrusting.',costs:[450,1450,4800,13000,39000],base:'Movement speed'},
+    hull:{name:'REINFORCED HULL',symbol:'⬡',description:'Survive hard landings and underground hazards.',costs:[300,1200,3700,11000,32000],base:'Hull integrity'},
+    radiator:{name:'RADIATOR',symbol:'❄',description:'Keep your engine cool at extreme depths.',costs:[550,1700,5000,14500,43000],base:'Cooling power'}
+  };
+  const limits = {tank:[120,185,275,400,560,780],cargo:[12,21,34,52,78,112],hull:[100,150,220,310,420,580]};
+  let state, map, removed, cameraX=0, cameraY=0, particles=[], keys=new Set();
+  let pressedDir='down', mining=null, stepClock=0, fallClock=0, falling=0, toastLeft=0, lastTime=0, lastUI=0, autosave=0, gameTime=0, screenShake=0;
+  let activeModal=null, audioEnabled=false, audioContext=null, ongoing=false;
+
+  function blankState() {
+    return {seed:Math.floor(Math.random()*100000000),p:{x:22,y:6,facing:'down'},money:250,cargo:{},fuel:120,hull:100,heat:0,levels:{drill:0,tank:0,cargo:0,engine:0,hull:0,radiator:0},tanks:0,bombs:0,deeper:0,sales:0,relics:0,wins:0,started:false,removed:[]};
+  }
+  function hash(x,y,k=0) {
+    let v = Math.imul((x+11)*374761393,(y+19)*668265263) ^ Math.imul((state.seed % 999999)+k*13, 1274126177);
+    v = Math.imul(v ^ (v>>>13),1274126177); v=(v^(v>>>16))>>>0;
+    return v/4294967296;
+  }
+  function oreAt(x,y) {
+    const depth=(y-SURFACE)*10, n=hash(x,y,16), vein=hash(Math.floor(x/3),Math.floor(y/3),35);
+    const threshold=.09+(vein>.82?.075:0);
+    if(n>threshold || y<=SURFACE+1)return null;
+    let choices;
+    if(depth<130)choices=[['coal',42],['copper',37],['iron',21]];
+    else if(depth<330)choices=[['coal',23],['copper',29],['iron',26],['silver',16],['gold',6]];
+    else if(depth<650)choices=[['copper',15],['iron',20],['silver',24],['gold',28],['ruby',10],['emerald',3]];
+    else if(depth<1050)choices=[['silver',15],['gold',28],['ruby',18],['emerald',24],['platinum',12],['stardust',3]];
+    else choices=[['gold',12],['ruby',19],['emerald',24],['platinum',25],['stardust',20]];
+    let roll=hash(x,y,18)*100;
+    for(const [ore,weight] of choices){roll-=weight;if(roll<0)return ore;}
+    return choices[choices.length-1][0];
+  }
+  function generate() {
+    map = Array.from({length:ROWS},(_,y)=>Array.from({length:COLS},(_,x)=>{
+      if(y<SURFACE)return null;
+      const d=(y-SURFACE)*10;
+      let type=d<125?'topsoil':d<325?'clay':d<700?'rock':d<1150?'deep':d<1700?'basalt':'abyss';
+      let hardness = type==='topsoil'?1:type==='clay'?1.6:type==='rock'?2.5:type==='deep'?3.5:type==='basalt'?4.4:5.1;
+      if(hash(x,y,27)<.06 && y>12)hardness+=.4;
+      return {type,hardness,ore:oreAt(x,y)};
+    }));
+    for(const [x,y] of [[9,109],[36,129],[15,167],[31,208]])map[y][x]={type:'relic',hardness:3.8,ore:'relic'};
+    map[230][22]={type:'core',hardness:5,ore:'core'};
+    removed = new Set(state.removed || []);
+    for(const id of removed){const x=id%COLS,y=Math.floor(id/COLS);if(y>=SURFACE&&y<ROWS)map[y][x]=null;}
+  }
+  function resetRuntime(){mining=null;stepClock=0;falling=0;fallClock=0;particles=[];keys.clear();ongoing=false;gameTime=0;screenShake=0;cameraX=clamp(state.p.x*T-CW/2,0,COLS*T-CW);cameraY=clamp(state.p.y*T-CH*.40,0,ROWS*T-CH)}
+  function loadSaved(){
+    try{const data=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(data && data.seed && data.p && data.levels) {
+      const def=blankState();state={...def,...data,levels:{...def.levels,...data.levels},p:{...def.p,...data.p},cargo:data.cargo||{}};
+      state.started=false;return true;
+    }}catch(e){console.warn('Save could not be loaded',e)}return false;
+  }
+  function save(){try{if(!state.started)return;state.removed=Array.from(removed);localStorage.setItem(SAVE_KEY,JSON.stringify({...state,started:true}));}catch(e){console.warn('Could not save',e)}}
+  function newGame(){localStorage.removeItem(SAVE_KEY);state=blankState();generate();resetRuntime();$('resetBtn').hidden=true;$('playBtn').innerHTML='START MINING <span>→</span>';updateUI(true)}
+  function init(){const existed=loadSaved();if(!existed)state=blankState();generate();resetRuntime();if(existed){$('playBtn').innerHTML='CONTINUE MINING <span>→</span>';$('resetBtn').hidden=false;}updateUI(true);requestAnimationFrame(loop)}
+  function cargoLoad(){return Object.entries(state.cargo).reduce((sum,[k,n])=>sum+(minerals[k]?.weight||0)*n,0)}
+  function cargoPrice(){return Object.entries(state.cargo).reduce((sum,[k,n])=>sum+(minerals[k]?.value||0)*n,0)}
+  function atSurface(){return state.p.y<=SURFACE-1}
+  function capacity(key){return limits[key][state.levels[key]]}
+  function levelPrice(key){return upgrades[key].costs[state.levels[key]]??null}
+  function spend(amount){if(state.money<amount){toast(`NEED ${fmt(amount-state.money)} MORE`, 'warn');playSound('warn');return false}state.money-=amount;return true}
+  function toast(msg,kind){$('toast').textContent=msg;$('toast').style.color=kind==='warn'?'#ffbb8e':kind==='good'?'#7fffe1':'#ffffff';$('toast').classList.add('show');toastLeft=1.65}
+  function buyMessage(){if(!atSurface()){toast('RETURN TO SURFACE TO USE THE BASE', 'warn');return false}return true}
+  function sell(){if(!buyMessage())return;let value=cargoPrice();if(value<=0){toast('CARGO BAY EMPTY');return}state.money+=value;state.cargo={};state.sales++;toast(`SOLD FOR ${fmt(value)}!`,'good');playSound('sell');burst(state.p.x*T,state.p.y*T,'#86ebbd',20);updateUI(true);save()}
+  function refuel(){if(!buyMessage())return;const missing=capacity('tank')-state.fuel;const cost=Math.ceil(missing*1.2);if(missing<.5){toast('TANK ALREADY FULL');return}if(!spend(cost))return;state.fuel=capacity('tank');toast(`TANK REFILLED • -${fmt(cost)}`,'good');playSound('sell');updateUI(true);save()}
+  function repair(){if(!buyMessage())return;const missing=capacity('hull')-state.hull,cost=Math.ceil(missing*1.65);if(missing<.5){toast('HULL IS ALREADY PERFECT');return}if(!spend(cost))return;state.hull=capacity('hull');toast(`HULL PATCHED • -${fmt(cost)}`,'good');playSound('sell');updateUI(true);save()}
+  function upgrade(key){const lvl=state.levels[key],cost=levelPrice(key);if(cost===null)return;if(!spend(cost)){openShop('upgrades');return}state.levels[key]++;
+    if(key==='tank')state.fuel=Math.min(capacity('tank'),state.fuel+70);
+    if(key==='hull')state.hull=Math.min(capacity('hull'),state.hull+65);
+    state.heat=Math.max(0,state.heat-10);toast(`${upgrades[key].name} • MK ${roman[lvl+1]}`,'good');playSound('upgrade');openShop('upgrades');updateUI(true);save();
+  }
+  function buySupply(kind){const cost=kind==='tank'?750:550;if(!spend(cost)){openShop('supplies');return}if(kind==='tank')state.tanks++;else state.bombs++;toast(kind==='tank'?'SPARE FUEL ADDED':'DYNAMITE ADDED','good');playSound('sell');openShop('supplies');updateUI(true);save()}
+  function useTank(){if(!state.started || activeModal)return;if(state.tanks<=0){toast('NO SPARE FUEL • BUY AT BASE','warn');return}const missing=capacity('tank')-state.fuel;if(missing<5){toast('SAVE IT — YOUR TANK IS FULL');return}state.tanks--;state.fuel=clamp(state.fuel+100,0,capacity('tank'));toast('+100 FUEL!','good');burst(state.p.x*T,state.p.y*T,'#ffcf74',12);playSound('sell');updateUI(true);save()}
+  function useBomb(){if(!state.started || activeModal)return;if(state.bombs<=0){toast('NO DYNAMITE • BUY AT BASE','warn');return}state.bombs--;let mined=0;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const x=state.p.x+dx,y=state.p.y+dy;if(dx*dx+dy*dy>5)continue; if(x<0||x>=COLS||y<SURFACE||y>=ROWS)continue;let tile=map[y][x];if(tile){removeTile(x,y,tile,true);mined++}}state.hull=Math.max(1,state.hull-4);screenShake=12;burst(state.p.x*T,state.p.y*T,'#ffb76b',40);toast(`BOOM! ${mined} TILES CLEARED`,'good');playSound('explode');if(activeModal!=='victory')updateUI(true);save()}
+  function removeTile(x,y,tile,bomb=false){
+    if(tile.ore){const item=minerals[tile.ore];if(item.weight===0){state.money+=item.value;if(tile.ore==='relic')state.relics++;else {state.wins++;setTimeout(()=>showVictory(),260)}toast(`${item.name.toUpperCase()} • +${fmt(item.value)}`,'good');playSound('rare');}
+      else if(cargoLoad()+item.weight<=capacity('cargo')){state.cargo[tile.ore]=(state.cargo[tile.ore]||0)+1;if(item.value>=1000 && !bomb)toast(`${item.name.toUpperCase()} FOUND!`,'good');playSound(item.value>=1000?'rare':'ore');}
+      else if(!bomb){toast('CARGO FULL — HEAD BACK UP!','warn');return false;}
+    }
+    map[y][x]=null;removed.add(y*COLS+x);
+    if(!bomb){burst((x+.5)*T,(y+.5)*T,tile.ore?minerals[tile.ore].color:'#ad8667',7);playSound('dig');screenShake=Math.min(screenShake+1.9,5)}
+    else burst((x+.5)*T,(y+.5)*T,tile.ore?minerals[tile.ore].color:'#d4996c',2);
+    return true;
+  }
+  function fail(reason){if(activeModal)return;state.cargo={};state.money=Math.max(0,state.money-350);state.p={x:22,y:6,facing:'down'};state.fuel=Math.max(75,capacity('tank')*.45);state.hull=capacity('hull')*.7;state.heat=0;mining=null;falling=0;screenShake=24;save();playSound('explode');activeModal='failure';$('modalOverlay').classList.remove('hidden');$('modalTitle').textContent='RIG DESTROYED';$('modalDescription').textContent=reason+'. Recovery crew retrieved your rig. You lost your cargo and paid a $350 salvage fee (if you could afford it). Your upgrades are safe.';$('modalContent').innerHTML='<div style="text-align:center;padding:26px 12px 33px"><div style="font:900 74px Barlow Condensed;color:#ff9672">MAYDAY!</div><p style="color:#aec0ce;font-size:13px">You live to dig another day.</p><button id="respawnBtn" class="primary">REDEPLOY RIG →</button></div>';$('modalMoney').textContent=fmt(state.money);$('respawnBtn').onclick=()=>{closeModal();updateUI(true)};updateUI(true)}
+  function showVictory(){if(activeModal==='victory')return;save();activeModal='victory';$('modalOverlay').classList.remove('hidden');$('modalTitle').textContent='THE FATHERLODE!';$('modalDescription').textContent='You made it to the very heart of the earth and discovered the legendary Earthheart.';$('modalContent').innerHTML='<div style="text-align:center;padding:26px 12px 33px"><div style="font:900 80px Barlow Condensed;color:#ffbd73">$100,000</div><p style="color:#aec0ce;font-size:13px">The Earthheart is yours. Keep mining to grow your empire!</p><button id="victoryBtn" class="primary">KEEP EXPLORING →</button></div>';$('modalMoney').textContent=fmt(state.money);$('victoryBtn').onclick=closeModal}
+  function openShop(which){if(!buyMessage())return;activeModal=which;$('modalOverlay').classList.remove('hidden');$('modalTitle').textContent=which==='upgrades'?'THE JUNK SHOP':'FIELD SUPPLIES';$('modalDescription').textContent=which==='upgrades'?'Permanent rig upgrades. Build the machine you need to survive the deep earth.':'Consumable emergency equipment for longer, riskier expeditions. Buy before heading down.';
+    if(which==='upgrades'){
+      $('modalContent').innerHTML='<div class="shop-grid">'+Object.keys(upgrades).map(k=>{
+        const u=upgrades[k],lvl=state.levels[k],price=levelPrice(k);
+        return `<div class="shop-item"><div class="shop-heading"><div class="shop-symbol">${u.symbol}</div><div><div class="shop-name">${u.name}</div><div class="shop-tier">MK ${roman[lvl]} ${price===null?'• MAXIMUM':'→ MK '+roman[lvl+1]}</div></div></div><div class="shop-desc">${u.description}</div><div class="shop-buy"><span class="shop-price">${price===null?'MAXED':fmt(price)}</span><button data-upgrade="${k}" ${price===null||state.money<price?'disabled':''}>${price===null?'MAXED':'UPGRADE'}</button></div></div>`
+      }).join('')+'</div>';
+      $('modalContent').querySelectorAll('[data-upgrade]').forEach(btn=>btn.addEventListener('click',()=>upgrade(btn.dataset.upgrade)));
+    }else{
+      $('modalContent').innerHTML='<div class="shop-grid">'+[['tank','⛽','SPARE FUEL CANISTER','Use anywhere with F to restore 100 fuel.','750'],['bomb','✹','DYNAMITE','Press X to blast open surrounding rock. Watch your hull!','550']].map(([k,symbol,name,desc,cost])=>`<div class="shop-item"><div class="shop-heading"><div class="shop-symbol">${symbol}</div><div><div class="shop-name">${name}</div><div class="shop-tier">IN INVENTORY: ${k==='tank'?state.tanks:state.bombs}</div></div></div><div class="shop-desc">${desc}</div><div class="shop-buy"><span class="shop-price">${fmt(+cost)}</span><button data-supply="${k}" ${state.money<+cost?'disabled':''}>BUY ITEM</button></div></div>`).join('')+'</div>';
+      $('modalContent').querySelectorAll('[data-supply]').forEach(btn=>btn.addEventListener('click',()=>buySupply(btn.dataset.supply)));
+    }
+    $('modalMoney').textContent=fmt(state.money);
+  }
+  function closeModal(){activeModal=null;$('modalOverlay').classList.add('hidden')}
+  function hurt(amount,msg){state.hull-=amount;if(msg&&amount>=8)toast(msg,'warn');if(state.hull<=0)fail('Your rig took too much damage')}
+  function move(x,y,dir,boost=false){const p=state.p;p.x=x;p.y=y;p.facing=dir;state.deeper=Math.max(state.deeper,Math.max(0,(y-SURFACE+1)*10));state.fuel-=dir==='up'?(1.2-state.levels.engine*.12):(.39-state.levels.engine*.035);if(boost)state.fuel-=.3;
+    if(state.fuel<=0){state.fuel=0;fail('You ran out of fuel underground');return}if(dir==='up')falling=0;
+    if(y>=SURFACE)state.heat+=.22+Math.max(0,(y-SURFACE)*.003);
+  }
+  function applyInput(dt){
+    const p=state.p;
+    if(!state.started || activeModal)return;
+    let direction=null;
+    if(keys.has('Space') || keys.has('ArrowUp') || keys.has('KeyW'))direction='up';
+    else if(keys.has('ArrowDown')||keys.has('KeyS'))direction='down';
+    else if(keys.has('ArrowLeft')||keys.has('KeyA'))direction='left';
+    else if(keys.has('ArrowRight')||keys.has('KeyD'))direction='right';
+    const vectors={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+    if(direction){
+      const [dx,dy]=vectors[direction],nx=p.x+dx,ny=p.y+dy;
+      if(nx<0||nx>=COLS||ny<0||ny>=ROWS){mining=null;return}
+      const tile=map[ny][nx],target=ny*COLS+nx;
+      if(tile){
+        if(mining?.target!==target)mining={target,x:nx,y:ny,progress:0};
+        const power=1+state.levels.drill*1.1;
+        const needed = Math.max(.12,tile.hardness/power*.29);
+        mining.progress +=dt/needed;
+        state.fuel-=dt*(.65+tile.hardness*.18);
+        state.heat+=dt*.7;
+        if(mining.progress>=1){if(removeTile(nx,ny,tile)){move(nx,ny,direction);stepClock=0;}mining=null;}
+      }else{
+        mining=null;stepClock+=dt;
+        const interval=Math.max(.063,.13-state.levels.engine*.013);
+        if(stepClock>=interval){stepClock=0;move(nx,ny,direction, direction==='up');}
+      }
+      if(direction==='up')fallClock=0;
+    }else{mining=null;stepClock=0;}
+    if(state.fuel<=0){fail('You ran out of fuel underground');return}
+    if(!direction || (direction!=='up' && direction!=='down')){
+      // Gravity: a free-falling craft needs thrust to hold altitude.
+      const below=map[p.y+1]?.[p.x];
+      if(p.y<ROWS-1 && !below){fallClock+=dt;if(fallClock>.13){fallClock=0;p.y++;falling++;state.fuel=Math.max(.01,state.fuel-.06)}}
+      else{if(falling>=5){const dmg=(falling-4)*Math.max(1.1,4-state.levels.hull*.48);hurt(dmg,'HARD LANDING!');playSound('damage');}falling=0;fallClock=0;}
+    }else if(direction==='down'){falling=0;fallClock=0}
+    const depth=Math.max(0,(p.y-SURFACE+1)*10);
+    const exposure=Math.max(0,depth-150)/1600;
+    state.heat=clamp(state.heat+dt*(exposure*(7.4-state.levels.radiator*.98)- (atSurface()?13:(1.5+state.levels.radiator*.85))),0,105);
+    if(state.heat>90){hurt(dt*(3.5+(state.heat-90)*.65),'ENGINE OVERHEATING!')}
+    if(atSurface())state.heat=Math.max(0,state.heat-dt*9);
+    if(!atSurface())state.fuel-=dt*.08;
+    if(state.fuel<=0)fail('You ran out of fuel underground');
+  }
+  function updateUI(force=false){
+    if(!force && gameTime-lastUI<.10)return;lastUI=gameTime;
+    const fuelP=clamp(state.fuel/capacity('tank')*100,0,100),hullP=clamp(state.hull/capacity('hull')*100,0,100),cargoP=clamp(cargoLoad()/capacity('cargo')*100,0,100);
+    $('moneyValue').textContent=fmt(state.money);const depth=Math.max(0,(state.p.y-SURFACE+1)*10);
+    $('depthValue').innerHTML=depth.toLocaleString()+' <small>ft</small>';$('deepestValue').textContent='BEST: '+state.deeper.toLocaleString()+' ft';
+    $('fuelBar').style.width=fuelP+'%';$('fuelPercent').textContent=Math.round(fuelP)+'%';$('fuelUnits').textContent=Math.ceil(state.fuel)+' / '+capacity('tank')+' L';
+    $('hullBar').style.width=hullP+'%';$('hullPercent').textContent=Math.round(hullP)+'%';$('hullUnits').textContent=Math.ceil(state.hull)+' / '+capacity('hull')+' HP';
+    $('heatBar').style.width=state.heat+'%';$('heatPercent').textContent=Math.round(state.heat)+'%';$('heatUnits').textContent=state.heat>85?'WARNING: OVERHEAT':state.heat>60?'ENGINE TEMP: HIGH':state.heat>30?'ENGINE TEMP: WARM':'ENGINE TEMP: COOL';
+    $('fuelBar').style.background=fuelP<24?'#f56868':'#f3aa52';$('hullBar').style.background=hullP<30?'#f56868':'#75dfb4';$('heatBar').style.background=state.heat>80?'#fa6a6a':'#58c4ec';
+    $('cargoCount').textContent=cargoLoad()+' / '+capacity('cargo');$('cargoBar').style.width=cargoP+'%';$('cargoValue').textContent=fmt(cargoPrice());
+    let entries=Object.entries(state.cargo).filter(x=>x[1]>0).sort((a,b)=>minerals[b[0]].value-minerals[a[0]].value);
+    $('cargoItems').innerHTML=entries.length?entries.map(([ore,n])=>`<div class="cargo-entry"><span><i style="background:${minerals[ore].color}"></i>${minerals[ore].name} ×${n}</span><strong>${fmt(minerals[ore].value*n)}</strong></div>`).join(''):'<div class="empty-cargo">NO MINERALS COLLECTED<br><span>Get drilling, boss.</span></div>';
+    for(const k of Object.keys(upgrades))$('gear'+k[0].toUpperCase()+k.slice(1)).textContent='MK '+roman[state.levels[k]];
+    $('rigLevel').textContent=roman[Math.max(...Object.values(state.levels))];$('tankCount').textContent='×'+state.tanks;$('bombCount').textContent='×'+state.bombs;
+    $('sellPreview').textContent=entries.length?fmt(cargoPrice())+' VALUE':'CARGO EMPTY';$('fuelPreview').textContent='FILL '+fmt(Math.ceil((capacity('tank')-state.fuel)*1.2));$('repairPreview').textContent='FIX '+fmt(Math.ceil((capacity('hull')-state.hull)*1.65));
+    document.querySelectorAll('.dock-btn').forEach(b=>b.classList.toggle('locked',!atSurface()));
+    $('depthBadge').textContent=atSurface()?'SURFACE — SAFE ZONE':depth>=1000?`DEEP EARTH — ${depth.toLocaleString()} FT`:depth>=450?`LOWER CRUST — ${depth.toLocaleString()} FT`:`UNDERGROUND — ${depth.toLocaleString()} FT`;
+    const missions=[
+      {title:'FIRST PAYDAY',text:'Mine some ore, return to the surface, and sell your cargo.',p:state.sales?1:0,count:state.sales?'COMPLETE':'0 / 1 SALES'},
+      {title:'GOING DEEPER',text:'Upgrade your drill and reach 300 feet below the surface.',p:Math.min(state.deeper/300,1),count:`${Math.min(state.deeper,300)} / 300 FT`},
+      {title:'ANCIENT SECRETS',text:'Find a golden Ancient Relic below 1,000 feet. Worth $50,000!',p:state.relics?1:Math.min(state.deeper/1000*.8,.8),count:state.relics?'RELIC DISCOVERED':`${Math.min(state.deeper,1000)} / 1000 FT`},
+      {title:'THE FATHERLODE',text:'Push beyond 2,200 ft. Find the Earthheart to win the ultimate prize.',p:state.wins?1:Math.min(state.deeper/2240*.9,.9),count:state.wins?'EARTHHEART FOUND!':`${Math.min(state.deeper,2240)} / 2240 FT`},
+    ];
+    const mi=state.sales===0?0:state.deeper<300?1:state.relics===0?2:3, mission=missions[mi];
+    $('missionTitle').textContent=mission.title;$('missionText').textContent=mission.text;$('missionBar').style.width=(mission.p*100)+'%';$('missionCount').textContent=mission.count;document.querySelector('.mission-card .eyebrow span').textContent='0'+(mi+1)+' / 04';
+    $('tipText').textContent=fuelP<25?'FUEL CRITICAL! Fly straight up your own shaft and return to the surface.':cargoP>90?'Your cargo hold is nearly full! Fly back up to sell it and afford better upgrades.':state.heat>78?'Heat warning! Ascend toward the surface or upgrade your radiator.':depth>850?'Ancient treasures can be found at 1,000 feet and below. Keep drilling!':'The deeper you dig, the richer the ore. Keep enough fuel to fly back up!';
+  }
+  function burst(x,y,color,count){for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,s=60+Math.random()*125;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:Math.random()*.45+.2,max:.65,c:color,r:Math.random()*4+1})}if(particles.length>350)particles.splice(0,particles.length-350)}
+  function playSound(type){if(!audioEnabled)return;try{if(!audioContext)audioContext=new (window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume();let tones={dig:[120,.045,'square'],ore:[530,.07,'sine'],rare:[810,.20,'triangle'],sell:[600,.13,'sine'],upgrade:[930,.22,'triangle'],warn:[120,.18,'sawtooth'],explode:[90,.3,'sawtooth'],damage:[190,.1,'square']};const [freq,duration,wave]=tones[type]||tones.dig;const osc=audioContext.createOscillator(),gain=audioContext.createGain();osc.type=wave;osc.frequency.setValueAtTime(freq,audioContext.currentTime);osc.frequency.exponentialRampToValueAtTime(Math.max(48,freq*(type==='explode'?.3:1.35)),audioContext.currentTime+duration);gain.gain.setValueAtTime(.065,audioContext.currentTime);gain.gain.exponentialRampToValueAtTime(.0001,audioContext.currentTime+duration);osc.connect(gain);gain.connect(audioContext.destination);osc.start();osc.stop(audioContext.currentTime+duration)}catch(e){/*Audio unavailable*/}}
+
+  // Canvas rendering: all scenery and characters are original geometry.
+  function drawSky(){const skyEnd=SURFACE*T;const grad=ctx.createLinearGradient(0,0,0,skyEnd-cameraY);grad.addColorStop(0,'#0a1d34');grad.addColorStop(1,'#326078');ctx.fillStyle=grad;ctx.fillRect(0,0,CW,Math.max(0,skyEnd-cameraY));if(cameraY>skyEnd)return;
+    const sx=(x)=>x-cameraX*.18;
+    ctx.fillStyle='#d1dceb';ctx.globalAlpha=.55;for(let i=0;i<38;i++){const x=((i*127.35+13)%1450-cameraX*.16)%CW,y=(i*73)%170;if(y<skyEnd-cameraY)ctx.fillRect(x,y,(i%4===0?2:1),1)}ctx.globalAlpha=1;
+    ctx.fillStyle='#fcd5a3';ctx.beginPath();ctx.arc(sx(1120),64-cameraY*.35,25,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#1c394d';ctx.beginPath();ctx.moveTo(-100,skyEnd-cameraY);for(let x=-100;x<CW+100;x+=50){ctx.lineTo(x,skyEnd-cameraY-33-34*(Math.sin((x+cameraX*.12)*.006)+1)/2)}ctx.lineTo(CW,skyEnd-cameraY);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#294b5a';ctx.beginPath();ctx.moveTo(-100,skyEnd-cameraY);for(let x=-100;x<CW+100;x+=36){ctx.lineTo(x,skyEnd-cameraY-18-17*(Math.sin((x+cameraX*.25)*.014)+1)/2)}ctx.lineTo(CW,skyEnd-cameraY);ctx.closePath();ctx.fill();
+  }
+  function drawStations(){const sy=SURFACE*T-cameraY;if(sy < -125 || sy > CH+160)return;const stations=[{x:5,w:5,h:95,label:'MINERAL PROCESSING',sub:'SELL YOUR ORE',light:'#75e9b8'},{x:16,w:5,h:80,label:'FUEL STATION',sub:'REFILL TANK',light:'#ffc477'},{x:28,w:6,h:104,label:'JUNK SHOP',sub:'RIG UPGRADES',light:'#ffa14b'},{x:39,w:5,h:85,label:'REPAIR DEPOT',sub:'PATCH UP',light:'#89baff'}];
+    for(const s of stations){const xx=s.x*T-cameraX,ww=s.w*T;if(xx<-ww-10||xx>CW+20)continue;
+      ctx.fillStyle='#172330';ctx.fillRect(xx,sy-s.h,ww,s.h);ctx.fillStyle='#2e4b5d';ctx.fillRect(xx+7,sy-s.h+9,ww-14,s.h-17);ctx.fillStyle='#0d1724';ctx.fillRect(xx+ww*.24,sy-49,ww*.52,49);ctx.fillStyle=s.light;ctx.fillRect(xx+5,sy-s.h,ww-10,5);ctx.fillStyle='#102434';ctx.fillRect(xx+4,sy-s.h-23,ww-8,19);ctx.font='800 13px Barlow Condensed, sans-serif';ctx.fillStyle=s.light;ctx.textAlign='center';ctx.fillText(s.label,xx+ww/2,sy-s.h-10);ctx.font='bold 12px monospace';ctx.fillStyle='#8cb0bd';ctx.fillText(s.sub,xx+ww/2,sy-s.h+34);ctx.fillStyle='#ffbb5c';ctx.fillRect(xx+ww/2-8,sy-42,16,10);ctx.fillStyle=s.light;ctx.fillRect(xx+ww/2-2,sy-32,4,6);
+    }
+    ctx.textAlign='left';ctx.fillStyle='#c1d2d7';ctx.font='800 13px monospace';ctx.fillText('WELCOME TO FATHERLOAD INDUSTRIAL MINES',18-cameraX,sy-127);
+    ctx.fillStyle='#6ca291';ctx.fillRect(-cameraX,sy-2,COLS*T,3);
+  }
+  const terrainColors={topsoil:['#876247','#9a714c'],clay:['#725449','#805950'],rock:['#48515a','#515e64'],deep:['#354257','#404a5d'],basalt:['#3a3548','#484055'],abyss:['#282b40','#313449'],relic:['#404052','#55516a'],core:['#5c3247','#6e374a']};
+  function drawTile(x,y,tile,sx,sy){
+    const r=hash(x,y,4),col=terrainColors[tile.type];ctx.fillStyle=r>.46?col[0]:col[1];ctx.fillRect(Math.floor(sx),Math.floor(sy),T+1,T+1);
+    ctx.fillStyle='#ffffff08';ctx.fillRect(sx,sy,T,2);ctx.fillStyle='#00000018';ctx.fillRect(sx,sy+T-2,T,2);ctx.fillRect(sx+T-2,sy,2,T);
+    ctx.strokeStyle=r>.5?'#070e1838':'#e2ad7920';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(sx+5+r*7,sy+9);ctx.lineTo(sx+14+r*6,sy+12);ctx.lineTo(sx+18+r*5,sy+22);ctx.stroke();
+    ctx.fillStyle='#d4b38a16';ctx.fillRect(sx+23,sy+6+(r*10),4,3);ctx.fillRect(sx+7,sy+24,3,3);
+    if(tile.ore){const ore=minerals[tile.ore],cx=sx+18,cy=sy+18;
+      if(tile.ore==='relic'||tile.ore==='core'){const pulse=.5+.5*Math.sin(gameTime*3);ctx.save();ctx.shadowBlur=12+11*pulse;ctx.shadowColor=ore.glow;ctx.fillStyle='#5c4035';ctx.fillRect(sx+5,sy+6,26,25);ctx.fillStyle=ore.color;ctx.beginPath();ctx.moveTo(cx,sy+5);ctx.lineTo(sx+29,cy);ctx.lineTo(cx,sy+30);ctx.lineTo(sx+7,cy);ctx.closePath();ctx.fill();ctx.fillStyle='#fff7dc';ctx.fillRect(cx-2,cy-2,4,4);ctx.restore();}
+      else {ctx.save();if(ore.value>=950){ctx.shadowBlur=9;ctx.shadowColor=ore.glow}ctx.fillStyle=ore.color;ctx.beginPath();ctx.moveTo(cx-9,cy-3);ctx.lineTo(cx-2,cy-11);ctx.lineTo(cx+10,cy-8);ctx.lineTo(cx+12,cy+4);ctx.lineTo(cx+2,cy+11);ctx.lineTo(cx-10,cy+7);ctx.closePath();ctx.fill();ctx.fillStyle='#ffffff89';ctx.beginPath();ctx.moveTo(cx-5,cy-3);ctx.lineTo(cx-1,cy-8);ctx.lineTo(cx+5,cy-6);ctx.lineTo(cx+1,cy);ctx.closePath();ctx.fill();ctx.restore()}
+    }
+  }
+  function drawWorld(){drawSky();let firstX=clamp(Math.floor(cameraX/T)-1,0,COLS-1),lastX=clamp(Math.ceil((cameraX+CW)/T)+1,0,COLS-1),firstY=clamp(Math.floor(cameraY/T)-1,SURFACE,ROWS-1),lastY=clamp(Math.ceil((cameraY+CH)/T)+1,SURFACE,ROWS-1);
+    ctx.fillStyle='#151d2c';ctx.fillRect(0,Math.max(0,SURFACE*T-cameraY),CW,CH);
+    for(let y=firstY;y<=lastY;y++)for(let x=firstX;x<=lastX;x++){let tile=map[y][x];if(tile)drawTile(x,y,tile,x*T-cameraX,y*T-cameraY);else if(y>=SURFACE){ctx.fillStyle=y>185?'#101522':y>110?'#141a29':'#192531';ctx.fillRect(x*T-cameraX,y*T-cameraY,T+1,T+1);if(hash(x,y,43)>.82){ctx.fillStyle='#ffffff13';ctx.fillRect(x*T-cameraX+11,y*T-cameraY+18,2,2)}}}
+    drawStations();
+    // Exposed layers and depth ruler.
+    for(let y=20;y<ROWS;y+=20){const sy=y*T-cameraY;if(sy<0||sy>CH)continue;ctx.fillStyle='#ffffff40';ctx.font='bold 11px monospace';ctx.fillText(((y-SURFACE+1)*10)+' FT',16,sy-7);ctx.strokeStyle='#ffffff12';ctx.setLineDash([3,10]);ctx.beginPath();ctx.moveTo(75,sy);ctx.lineTo(CW,sy);ctx.stroke();ctx.setLineDash([]);}
+    if(cameraY>1000){const darkness=clamp((cameraY-1000)/7000,0,.36);ctx.fillStyle=`rgba(0,0,16,${darkness})`;ctx.fillRect(0,0,CW,CH)}
+  }
+  function drawPlayer(){const p=state.p,x=p.x*T-cameraX+T/2,y=p.y*T-cameraY+T/2,bob=Math.sin(gameTime*5)*.8;
+    ctx.save();ctx.translate(x,y+bob);const thrust=keys.has('Space')||keys.has('KeyW')||keys.has('ArrowUp');
+    ctx.shadowColor='#e6a96f';ctx.shadowBlur=17;ctx.fillStyle='#152535';ctx.fillRect(-15,-13,30,25);ctx.shadowBlur=0;
+    ctx.fillStyle='#263b4b';ctx.fillRect(-17,-8,34,20);ctx.fillStyle='#feab4f';ctx.fillRect(-13,-12,26,23);ctx.fillStyle='#e37931';ctx.fillRect(-10,-10,20,3);ctx.fillStyle='#304c61';ctx.fillRect(-10,-3,20,10);ctx.fillStyle='#9bd9e2';ctx.fillRect(-7,-2,14,7);ctx.fillStyle='#e6ffff';ctx.fillRect(-4,-1,6,2);ctx.fillStyle='#ffd68b';ctx.fillRect(-15,-10,3,7);ctx.fillRect(12,-10,3,7);
+    ctx.fillStyle='#0c1c2b';ctx.fillRect(-14,10,9,8);ctx.fillRect(6,10,9,8);ctx.fillStyle='#57758b';ctx.fillRect(-12,12,5,5);ctx.fillRect(8,12,5,5);
+    // Directional drill bit; unique geometric machine sprite.
+    ctx.save();let rotation=p.facing==='up'?Math.PI:p.facing==='left'?Math.PI/2:p.facing==='right'?-Math.PI/2:0;ctx.rotate(rotation);ctx.fillStyle='#718a9a';ctx.fillRect(-7,12,14,5);ctx.fillStyle='#e7b978';ctx.beginPath();ctx.moveTo(-9,17);ctx.lineTo(0,29);ctx.lineTo(9,17);ctx.closePath();ctx.fill();ctx.fillStyle='#f9deac';ctx.beginPath();ctx.moveTo(-2,17);ctx.lineTo(0,26);ctx.lineTo(2,17);ctx.fill();ctx.restore();
+    if(thrust){const flame=9+Math.sin(gameTime*38)*5;ctx.fillStyle='#ffa246';ctx.beginPath();ctx.moveTo(-13,18);ctx.lineTo(-9,20+flame);ctx.lineTo(-5,18);ctx.moveTo(6,18);ctx.lineTo(10,20+flame);ctx.lineTo(15,18);ctx.fill();ctx.fillStyle='#ffeb95';ctx.fillRect(-11,18,4,7);ctx.fillRect(8,18,4,7)}
+    ctx.restore();
+    if(mining){const tx=mining.x*T-cameraX+T/2,ty=mining.y*T-cameraY+T/2;ctx.beginPath();ctx.arc(tx,ty,15,-Math.PI/2,-Math.PI/2+Math.PI*2*clamp(mining.progress,0,1));ctx.strokeStyle='#ffcd7d';ctx.lineWidth=3;ctx.stroke()}
+  }
+  function drawParticles(dt){for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=170*dt;p.l-=dt;if(p.l<=0){particles.splice(i,1);continue}ctx.globalAlpha=clamp(p.l/p.max,0,1);ctx.fillStyle=p.c;ctx.fillRect(p.x-cameraX,p.y-cameraY,p.r,p.r)}ctx.globalAlpha=1}
+  function draw(){ctx.save();ctx.clearRect(0,0,CW,CH);if(screenShake>0)ctx.translate((Math.random()-.5)*screenShake,(Math.random()-.5)*screenShake);drawWorld();drawPlayer();drawParticles(0);ctx.restore();if(!state.started){ctx.fillStyle='#06142422';ctx.fillRect(0,0,CW,CH)}}
+  function loop(now){if(!lastTime)lastTime=now;let dt=Math.min((now-lastTime)/1000,.05);lastTime=now;gameTime+=dt;
+    if(state.started&&!activeModal&&$('startOverlay').classList.contains('hidden')){applyInput(dt);autosave+=dt;if(autosave>=8){autosave=0;save()}}
+    const desiredX=clamp((state.p.x+.5)*T-CW/2,0,COLS*T-CW), desiredY=clamp((state.p.y+.5)*T-CH*.43,0,ROWS*T-CH);
+    cameraX+=(desiredX-cameraX)*Math.min(1,dt*8);cameraY+=(desiredY-cameraY)*Math.min(1,dt*7);
+    if(screenShake>0)screenShake=Math.max(0,screenShake-dt*25);
+    if(toastLeft>0){toastLeft-=dt;if(toastLeft<=0)$('toast').classList.remove('show')}
+    for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=160*dt;p.l-=dt;if(p.l<=0)particles.splice(i,1)}
+    draw();updateUI();requestAnimationFrame(loop);
+  }
+  function start(){state.started=true;$('startOverlay').classList.add('hidden');canvas.focus();toast('WELCOME ABOARD, DAD!');save();updateUI(true)}
+  $('playBtn').addEventListener('click',start);
+  $('resetBtn').addEventListener('click',()=>{if(window.confirm('Start a new game? This will erase your current Fatherload progress.')){newGame();start()}});
+  $('sellBtn').onclick=sell;$('fuelBtn').onclick=refuel;$('repairBtn').onclick=repair;$('shopBtn').onclick=()=>openShop('upgrades');$('supplyBtn').onclick=()=>openShop('supplies');
+  $('closeModal').onclick=()=>{if(activeModal!=='failure')closeModal()};
+  $('modalOverlay').addEventListener('click',e=>{if(e.target===$('modalOverlay')&&activeModal!=='failure')closeModal()});
+  $('helpBtn').onclick=()=>{if(state.started){$('startOverlay').classList.remove('hidden');$('playBtn').innerHTML='RETURN TO MINING <span>→</span>';$('resetBtn').hidden=false;}else $('startOverlay').classList.remove('hidden')};
+  $('audioBtn').onclick=()=>{audioEnabled=!audioEnabled;$('audioBtn').textContent=audioEnabled?'♪ SOUND ON':'♪ SOUND OFF';playSound('upgrade')};
+  window.addEventListener('keydown',e=>{
+    const gameKeys=['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','KeyG','KeyE','KeyF','KeyR','KeyX','Escape'];if(gameKeys.includes(e.code))e.preventDefault();
+    if(e.code==='Escape'){if(activeModal==='failure')return;if(activeModal)closeModal();else if(!$('startOverlay').classList.contains('hidden'))start();return}
+    if(!$('startOverlay').classList.contains('hidden')||!state.started||activeModal)return;
+    if(e.code==='KeyG'&&!e.repeat){openShop('upgrades');return}
+    if(e.code==='KeyE'&&!e.repeat){sell();return}
+    if(e.code==='KeyR'&&!e.repeat){refuel();return}
+    if(e.code==='KeyF'&&!e.repeat){useTank();return}
+    if(e.code==='KeyX'&&!e.repeat){useBomb();return}
+    if(gameKeys.includes(e.code))keys.add(e.code);
+  });
+  window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>keys.clear());
+  for(const b of document.querySelectorAll('.touch-btn')){
+    const code=b.dataset.key;b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys.add(code);b.classList.add('pressed')});
+    for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,()=>{keys.delete(code);b.classList.remove('pressed')});
+  }
+  $('touchTank').onclick=useTank;$('touchBomb').onclick=useBomb;
+  window.addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();save()}});
+  init();
+})();
+
+</script>
+</body>
+</html>
