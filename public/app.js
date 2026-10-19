@@ -101,7 +101,8 @@ async function leaveCurrentRoom(){
   const isHost=state.you===state.host;
   if(isHost&&!window.confirm('Cancel this game for everyone and return to the main menu?'))return;
   if(isHost){
-    await api('cancel');
+    const result=await api('cancel');
+    persistUsed(result.usedFamilies);
     resetToHome();
     toast('Game cancelled. Back to the main menu.');
   }else{
