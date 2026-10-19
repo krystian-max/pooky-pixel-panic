@@ -15,6 +15,32 @@ const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;
 const pad=n=>String(Math.max(0,n)).padStart(2,'0');
 let token=null, state=null, source=null, lastView='', lastRoundKey='', lastActivityKey='', timerHandle=null, toastTimeout=null, paintCount=-1;
 let picture=null, sourceCanvas=null, imageReady=false, expectedImage='', drawing=false;
+let lastGuessSeq=0;
+const ordinal=n=>n+(n%100>=11&&n%100<=13?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'));
+function updateScores(){
+  if(!state||!['playing','reveal'].includes(state.phase))return;
+  for(const p of state.players){
+    const card=Array.from(document.querySelectorAll('[data-player-id]')).find(n=>n.dataset.playerId===p.id);
+    if(!card)continue;
+    const points=card.querySelector('.score-points');if(points)points.textContent=p.score.toLocaleString('en-GB');
+    const place=card.querySelector('.round-rank');if(place)place.textContent=p.roundPlace?ordinal(p.roundPlace)+' · +'+p.roundPoints:'Still guessing';
+  }
+  const me=state.players.find(p=>p.id===state.you),input=$('#guess-input'),btn=$('#guess-form button');
+  if(input)input.disabled=state.phase!=='playing'||Boolean(me?.roundPlace);
+  if(btn){btn.disabled=state.phase!=='playing'||Boolean(me?.roundPlace);btn.textContent=me?.roundPlace?'✓ '+ordinal(me.roundPlace)+' place · +'+me.roundPoints:state.phase==='playing'?'Submit guess ↗':'Round complete';}
+}
+function guessFlash(event){
+  if(!event||state.phase!=='playing')return;
+  const card=Array.from(document.querySelectorAll('[data-player-id]')).find(n=>n.dataset.playerId===event.playerId);
+  if(!card)return;
+  card.classList.remove('guess-wrong','guess-right');card.querySelector('.guess-bubble')?.remove();void card.offsetWidth;
+  card.classList.add(event.correct?'guess-right':'guess-wrong');
+  const bubble=document.createElement('span');bubble.className='guess-bubble '+(event.correct?'correct':'incorrect');
+  bubble.textContent=event.correct?ordinal(event.place)+' · +'+event.points+' points':'“'+event.guess+'” ✕';
+  card.appendChild(bubble);
+  const seq=event.seq;
+  setTimeout(()=>{if(state?.guessEvent?.seq===seq||card.isConnected){card.classList.remove('guess-right','guess-wrong');bubble.remove();}},3300);
+}
 
 function toast(msg,bad=false){toastNode.textContent=msg;toastNode.className='toast show'+(bad?' bad':'');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>toastNode.classList.remove('show'),2700);}
 async function api(path,data={}){
@@ -25,7 +51,7 @@ async function api(path,data={}){
 }
 const safe=async fn=>{try{await fn();}catch(e){toast(e.message,true);}};
 function setRoom(result){
-  token=result.token;
+  token=result.token;lastGuessSeq=0;
   localStorage.setItem(storageKey,token);
   state=result.state;
   rememberFinishedGame();connectEvents();render(true);
@@ -47,12 +73,14 @@ function connectEvents(){
     state=newState;
     rememberFinishedGame();
     render(!oldPhase||oldPhase!==state.phase||oldRound!==state.round||oldCount!==state.players.length||oldGame!==state.gameId);
+    updateScores();
+    if(state.guessEvent&&state.guessEvent.seq!==lastGuessSeq){lastGuessSeq=state.guessEvent.seq;guessFlash(state.guessEvent);}
   }catch(e){console.warn(e);}};
   source.onerror=()=>{/* EventSource automatically reconnects after brief network interruptions. */};
 }
 function resetToHome(){
   if(source){source.close();source=null;}
-  token=null;state=null;localStorage.removeItem(storageKey);lastView='';lastRoundKey='';lastActivityKey='';
+  token=null;state=null;lastGuessSeq=0;localStorage.removeItem(storageKey);lastView='';lastRoundKey='';lastActivityKey='';
   history.replaceState(null,'','/');render(true);
 }
 async function leaveCurrentRoom(){
@@ -76,7 +104,7 @@ function introMarkup(){
       <div class="eyebrow">THE ULTIMATE LIGHTING SHOWDOWN</div>
       <h1>Pixel<br><span class="orange">Panic!</span></h1>
       <p>Know your Trindle from your Twinky? Race your colleagues to name the Pooky product before the pixels disappear.</p>
-      <div class="hero-features"><span class="pill">✦ 10 rounds</span><span class="pill">◷ 60 seconds</span><span class="pill">◈ Up to 20 players</span></div>
+      <div class="hero-features"><span class="pill">✦ 10 rounds</span><span class="pill">◷ 45 seconds</span><span class="pill">◈ Up to 20 players</span></div>
       <div class="form-panel">
         <h3>Ready to play?</h3><p class="subtle">No password needed. Just a nickname and a room code.</p>
         <form id="create-form"><div class="form-row"><input class="field" id="nickname" aria-label="Your nickname" placeholder="Your nickname" maxlength="24" minlength="2" autocomplete="nickname" required/><button class="btn btn-primary" type="submit">Create game <span>↗</span></button></div></form>
@@ -98,7 +126,7 @@ function lobbyMarkup(){
       <div class="panel-label">YOUR PRIVATE GAME CODE</div><div class="room-code">${escapeHtml(state.code)}</div>
       <div class="lobby-actions"><button class="btn btn-primary" id="copy-invite">↗ Copy invite link</button><button class="btn btn-white" id="copy-code">Copy code</button></div>
       <p class="room-note">Send the link to your colleagues. They enter a nickname and join from their own device. Everyone sees the same round and timer.</p>
-      <div class="hint-card"><strong>✦ How to win</strong><br>Every five seconds, one new piece of the photo snaps into focus. Type the <b>product family name</b> (e.g. “Trindle”). The first correct answer wins the round. One-letter typos are accepted. Earlier guesses earn more points!</div>
+      <div class="hint-card"><strong>✦ How to win</strong><br>Every five seconds, one new piece of the photo snaps into focus. Type the <b>product family name</b> (e.g. “Trindle”). Every round lasts 45 seconds. Every correct guess scores, ranked 1st, 2nd, 3rd and beyond. One-letter typos are accepted!</div>
     </div><div class="panel"><div class="panel-label">PLAYERS · ${state.players.length}/${state.maxPlayers}</div><h2>In the room</h2>
       <div class="players-list">${state.players.map((p,i)=>`<div class="player-entry"><span class="avatar p${i+1}">${escapeHtml(p.name.slice(0,1).toUpperCase())}</span><div class="player-meta"><b>${escapeHtml(p.name)} ${state.you===p.id?'(you)':''}</b><span>${i===0?'Game host':'Player '+(i+1)}</span></div><span class="online ${p.online?'':'waiting'}">${p.online?'● READY':'CONNECTING'}</span></div>`).join('')}
       ${!full?`<div class="player-entry" style="border:2px dashed #ddd0c8;background:#fff"><span class="avatar" style="background:#f1ebeb;color:#b3a6a7">?</span><div class="player-meta"><b>Waiting for more players</b><span>Send the invite link...</span></div><span class="online waiting">◌ EMPTY</span></div>`:''}</div>
@@ -109,19 +137,16 @@ function lobbyMarkup(){
       ${youHost&&state.remaining<10?'<button class="btn btn-white" id="reset-used">Reset product history (allow repeats again)</button>':''}
     </section>`;
 }
-const playerScoreMarkup=(p,i)=>`<div class="scorebox ${i===0?'leader':''} ${p.id===state.you?'your-score':''}"><span class="score-rank">#${i+1}</span><span class="avatar">${escapeHtml(p.name[0].toUpperCase())}</span><div style="min-width:0"><div class="score-name">${escapeHtml(p.name)}${p.id===state.you?' (you)':''}</div><div class="score-points">${p.score.toLocaleString('en-GB')}</div><div class="score-wins">${p.wins} round${p.wins===1?'':'s'} won</div></div></div>`;
+const playerScoreMarkup=(p,i)=>`<div class="scorebox ${i===0?'leader':''} ${p.id===state.you?'your-score':''}" data-player-id="${escapeHtml(p.id)}"><span class="score-rank">#${i+1}</span><span class="avatar">${escapeHtml(p.name[0].toUpperCase())}</span><div class="score-content"><div class="score-name">${escapeHtml(p.name)}${p.id===state.you?' (you)':''}</div><div class="score-points">${p.score.toLocaleString('en-GB')}</div><div class="round-rank">${p.roundPlace?`${ordinal(p.roundPlace)} · +${p.roundPoints}`:'Still guessing'}</div></div></div>`;
 function gameMarkup(){
-  const isReveal=state.phase==='reveal';
-  const itemReady=state.source==='photo';
-  const youWon=isReveal&&state.winner===state.you;
-  const who=state.players.find(p=>p.id===state.winner);
-  const roundEnd=isReveal?`<div class="round-result ${state.winner?(youWon?'':'lose-result'):'no-guess'}"><h3>${state.winner?(youWon?'🎉 You got it!':'⚡ '+escapeHtml(who?.name||'Someone')+' got it!'):'⏰ Time’s up!'}</h3><p>The answer was <b>${escapeHtml(state.answer)}</b>.</p>${state.productUrl?`<a href="${escapeHtml(state.productUrl)}" target="_blank" rel="noopener noreferrer">View product on Pooky ↗</a>`:''}<p style="margin-top:8px;font-size:11px">Next round starting automatically...</p></div>`:'';
-  return `<section class="game"><div class="game-heading"><div><div class="round-kicker">THE PRODUCT CHALLENGE</div><h2 class="game-title">Round <span style="color:var(--orange)">${state.round}</span> <span style="color:#bcaeab">/ ${state.total}</span></h2></div><div class="round-bars" aria-label="Round progress">${Array.from({length:state.total},(_,i)=>`<span class="${i<state.round-1?'passed':i===state.round-1?'active':''}"></span>`).join('')}</div></div>
-  <div class="stage"><div class="image-stage" id="image-stage"><canvas id="pixel-canvas" class="pixel-canvas" width="800" height="800" aria-label="Product image gradually being revealed"></canvas><div class="stage-top"><span class="stage-tag ${isReveal?'revealed':'orange'}">${isReveal?'✓ REVEALED':'◈ WHAT’S THAT LIGHT?'}</span><span class="stage-tag">${state.round} / 10</span></div><div class="stage-corner">${itemReady?'REAL POOKY PHOTO':'ILLUSTRATED DEMO IMAGE'}</div><div id="loading-photo" class="stage-spinner">Loading image...</div></div>
-    <div class="aside"><div class="timer-card"><div class="timer-head"><span>${isReveal?'ROUND COMPLETE':'TIME LEFT'}</span><span>${isReveal?'✓':'◷ 60 SECONDS'}</span></div><div class="timer-num" id="timer-num">${isReveal?'00':'60'}<span>SEC</span></div><div class="progress-rail"><div class="progress-fill" id="timer-fill"></div></div><div class="reveal-caption"><span>PICTURE REVEAL</span><span id="reveal-count">0 / 12</span></div><div class="reveal-dots" id="reveal-dots">${Array.from({length:12},()=>'<span></span>').join('')}</div></div>
-      <div class="guess-card"><h3>Know the product?</h3><p>Be the first to name it. The faster you are, the more points you score.</p>
-      <form class="guess-form" id="guess-form"><input id="guess-input" class="field guess-field" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" placeholder="Type a Pooky product name..." maxlength="90" ${isReveal?'disabled':''} required/><button class="btn btn-primary" type="submit" ${isReveal?'disabled':''}>${isReveal?'Waiting for next round...':'Submit guess ↗'}</button></form><p class="subfoot">Product family names work · e.g. “Freya” · one-character typos allowed</p>${roundEnd}</div></div></div>
-  <div class="scoreboard">${[...state.players].sort((a,b)=>b.score-a.score||b.wins-a.wins).map((p,i)=>playerScoreMarkup(p,i)).join('')}</div></section>`;
+  const isReveal=state.phase==='reveal',place=state.placements||[];
+  const answer=isReveal?`<div class="round-result product-answer"><div class="answer-eyebrow">THE PRODUCT WAS</div><h2>${escapeHtml(state.answer)}</h2>${state.productUrl?`<a href="${escapeHtml(state.productUrl)}" target="_blank" rel="noopener noreferrer">View on Pooky ↗</a>`:''}<p>${place.length?place.map(p=>`${ordinal(p.place)} ${escapeHtml(p.name)} (+${p.points})`).join(' · '):'No correct answers this time!'}</p></div>`:'';
+  return `<section class="game"><div class="game-heading"><div><div class="round-kicker">THE POOKY PRODUCT CHALLENGE</div><h2 class="game-title">Round <span style="color:var(--orange)">${state.round}</span> <span style="color:#bcaeab">/ ${state.total}</span></h2></div><div class="round-bars">${Array.from({length:state.total},(_,i)=>`<span class="${i<state.round-1?'passed':i===state.round-1?'active':''}"></span>`).join('')}</div></div>
+  <div class="stage"><div class="image-stage" id="image-stage"><canvas id="pixel-canvas" class="pixel-canvas" width="800" height="800" aria-label="Product image gradually revealed"></canvas><div class="stage-top"><span class="stage-tag ${isReveal?'revealed':'orange'}">${isReveal?'✓ REVEALED':'✺ NAME THAT LIGHT'}</span><span class="stage-tag">${state.round} / 10</span></div><div class="stage-corner">${state.source==='photo'?'POOKY PRODUCT PHOTOGRAPH':'ILLUSTRATED DEMO IMAGE'}</div><div id="loading-photo" class="stage-spinner">Loading image...</div></div>
+  <div class="aside"><div class="timer-card"><div class="timer-head"><span>${isReveal?'ROUND COMPLETE':'TIME REMAINING'}</span><span>45 SECONDS</span></div><div class="timer-num" id="timer-num">${isReveal?'00':'45'}<span>SEC</span></div><div class="progress-rail"><div class="progress-fill" id="timer-fill"></div></div><div class="reveal-caption"><span>PICTURE REVEAL</span><span id="reveal-count">0 / 12</span></div><div class="reveal-dots" id="reveal-dots">${Array.from({length:12},()=>'<span></span>').join('')}</div></div>
+  <div class="guess-card"><h3>Have a bright idea?</h3><p>Everyone gets 45 seconds to guess. Earlier correct answers earn more points!</p>
+  <form class="guess-form" id="guess-form"><input id="guess-input" class="field guess-field" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Which Pooky product is it?" maxlength="90" ${isReveal?'disabled':''} required/><button class="btn btn-primary" type="submit" ${isReveal?'disabled':''}>Submit guess ↗</button></form><p class="subfoot">One letter out? We'll still count it.</p>${answer}</div></div></div>
+  <h3 class="leaderboard-heading">THE LEADERBOARD ✺</h3><div class="scoreboard">${[...state.players].sort((a,b)=>b.score-a.score||b.wins-a.wins).map((p,i)=>playerScoreMarkup(p,i)).join('')}</div></section>`;
 }
 function endMarkup(){
   const list=[...state.players].sort((a,b)=>b.score-a.score||b.wins-a.wins);
@@ -140,7 +165,7 @@ function endMarkup(){
 
 function render(force=false){
   const view=state?(state.phase==='lobby'?'lobby':state.phase==='finished'?'finished':'game'):'intro';
-  const activityKey=state?`${state.players.map(p=>`${p.id}:${p.online}:${p.score}`).join('|')}:${state.uploads}:${state.photos}:${state.catalogueLoading}:${state.remaining}:${state.usedCount}`:'';
+  const activityKey=state?`${state.players.map(p=>`${p.id}:${p.online}:${view==='lobby'?p.score:0}`).join('|')}:${state.uploads}:${state.photos}:${state.catalogueLoading}:${state.remaining}:${state.usedCount}`:'';
   const key=state?`${view}:${state.code}:${state.round}:${state.phase}:${state.gameId}`:view;
   if(!force&&key===lastView&&activityKey===lastActivityKey)return;
   lastView=key;lastActivityKey=activityKey;
@@ -154,7 +179,7 @@ function render(force=false){
   }
   attachEvents(view);
   if(view==='game'&&state.phase==='playing')$('#guess-input')?.focus({preventScroll:true});
-  updateClock();
+  updateScores();updateClock();
 }
 function attachEvents(view){
   document.querySelectorAll('.exit-room-button').forEach(button=>{button.onclick=()=>safe(leaveCurrentRoom);});
@@ -170,7 +195,7 @@ function attachEvents(view){
     const custom=$('#use-custom');if(custom)custom.onchange=()=>safe(async()=>{await api('catalogue',{custom:custom.checked});toast(custom.checked?'Your photos selected.':'Pooky catalogue selected.');});
   }
   if(view==='game'){
-    const form=$('#guess-form');if(form)form.onsubmit=e=>{e.preventDefault();const input=$('#guess-input');const guess=input.value.trim();if(!guess)return;const button=$('button',form);button.disabled=true;safe(async()=>{try{const result=await api('guess',{guess});if(result.correct)toast(`Correct! +${result.points} points 🎉`);}finally{if(state?.phase==='playing'){button.disabled=false;input.value='';input.focus({preventScroll:true});}}});};
+    const form=$('#guess-form');if(form)form.onsubmit=e=>{e.preventDefault();const input=$('#guess-input');const guess=input.value.trim();if(!guess)return;const button=$('button',form);button.disabled=true;safe(async()=>{try{const result=await api('guess',{guess});if(result.alreadyCorrect)toast('You already got this product!');}finally{if(state?.phase==='playing'){input.value='';updateScores();if(!button.disabled){input.focus({preventScroll:true});}}}});};
   }
   if(view==='lobby'||view==='finished'){
     const reset=$('#reset-used');if(reset)reset.onclick=()=>safe(async()=>{
@@ -237,10 +262,11 @@ function updateClock(){
   if(!state||!['playing','reveal'].includes(state.phase))return;
   const playing=state.phase==='playing';
   const remains=playing?Math.max(0,(state.endsAt-Date.now())/1000):0;
-  const elapsed=playing?60-remains:60;
-  const revealed=playing?Math.min(12,Math.floor((elapsed+.0001)/5)):12;
+  const duration=state.roundSeconds||45;
+  const elapsed=playing?duration-remains:duration;
+  const revealed=playing?Math.min(12,Math.floor((elapsed+.0001)/(duration/12))):12;
   const timer=$('#timer-num');if(timer)timer.innerHTML=`${pad(Math.ceil(remains))}<span>SEC</span>`;
-  const fill=$('#timer-fill');if(fill)fill.style.width=(remains/60*100)+'%';
+  const fill=$('#timer-fill');if(fill)fill.style.width=(remains/(state.roundSeconds||45)*100)+'%';
   const count=$('#reveal-count');if(count)count.textContent=`${revealed} / 12`;
   const dots=$('#reveal-dots');if(dots)Array.from(dots.children).forEach((n,i)=>n.classList.toggle('done',i<revealed));
   paintReveal(revealed,!playing);
