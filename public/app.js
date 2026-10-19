@@ -99,23 +99,22 @@ async function leaveCurrentRoom(){
 }
 function introMarkup(){
   const maybeCode=new URLSearchParams(location.search).get('room')||'';
-  return `<div class="hero">
-    <section class="hero-copy">
-      <div class="eyebrow">THE ULTIMATE LIGHTING SHOWDOWN</div>
-      <h1>Pixel<br><span class="orange">Panic!</span></h1>
-      <p>Know your Trindle from your Twinky? Race your colleagues to name the Pooky product before the pixels disappear.</p>
-      <div class="hero-features"><span class="pill">✦ 10 rounds</span><span class="pill">◷ 45 seconds</span><span class="pill">◈ Up to 20 players</span></div>
-      <div class="form-panel">
-        <h3>Ready to play?</h3><p class="subtle">No password needed. Just a nickname and a room code.</p>
-        <form id="create-form"><div class="form-row"><input class="field" id="nickname" aria-label="Your nickname" placeholder="Your nickname" maxlength="24" minlength="2" autocomplete="nickname" required/><button class="btn btn-primary" type="submit">Create game <span>↗</span></button></div></form>
-        <form id="join-form"><div class="join-row"><input class="field" id="room-input" aria-label="Room code" placeholder="ROOM CODE" value="${escapeHtml(maybeCode)}" maxlength="5" required/><button class="btn btn-white" type="submit" style="flex:1">Join a friend's room →</button></div></form>
+  return `<div class="campaign">
+    <div class="campaign-copy">
+      <div class="campaign-kicker">✳ THE POOKY PRODUCT CHALLENGE</div>
+      <h1>no two<br><em>ever the same.</em></h1>
+      <p>A little lighting knowledge goes a long way. Can you name the Pooky product before the picture comes into focus?</p>
+      <div class="campaign-chips"><span>10 rounds</span><span>45 seconds</span><span>up to 20 players</span></div>
+      <div class="form-panel campaign-form">
+        <h3>Ready for a little friendly competition?</h3>
+        <p class="subtle">Create a room, invite your colleagues and let the guessing begin.</p>
+        <form id="create-form"><div class="form-row"><input class="field" id="nickname" aria-label="Your nickname" placeholder="Your nickname" maxlength="24" minlength="2" autocomplete="nickname" required/><button class="btn btn-primary" type="submit">Create game →</button></div></form>
+        <form id="join-form"><div class="join-row"><input class="field" id="room-input" aria-label="Room code" placeholder="ROOM CODE" value="${escapeHtml(maybeCode)}" maxlength="5" required/><button class="btn btn-white" type="submit" style="flex:1">Join a room →</button></div></form>
       </div>
-    </section>
-    <aside class="hero-art" aria-label="Abstract illustration of a lamp emerging from pixelated blocks">
-      <div class="art-asterisk">✳</div><div class="art-stage"><div class="art-pixels"></div><div class="art-circle"></div><div class="art-clear"><svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse cx="100" cy="260" rx="71" ry="11" fill="#cdb7a0"/><path d="M90 90V136" stroke="#b39369" stroke-width="9"/><path d="M72 136Q60 159 75 181Q42 223 74 247Q100 262 126 247Q158 223 125 181Q140 159 128 136Z" fill="#ed7b52" stroke="#cd6244" stroke-width="4"/><path d="M45 82L67 21H133L155 82Z" fill="#ead6a8" stroke="#ae8d60" stroke-width="4"/><rect x="67" y="247" width="67" height="8" rx="4" fill="#ab775d"/></svg></div></div>
-      <div class="art-sticker top">WHAT ON EARTH IS THAT? 👀</div><div class="art-sticker bottom">GUESS IT FIRST. WIN BIG. ✨</div>
-    </aside>
-  </div>`;
+    </div>
+    <div class="campaign-images"><div class="photo-frame photo-one"><img src="/api/showcase/0" alt="Pooky lighting product" loading="eager"></div><div class="photo-frame photo-two"><img src="/api/showcase/1" alt="Pooky lighting product" loading="eager"></div><div class="photo-frame photo-three"><img src="/api/showcase/2" alt="Pooky lighting product" loading="eager"></div><span class="campaign-scribble">what's that<br>light? ↗</span></div>
+  </div>
+  <section class="collection-strip"><div><div class="collection-eyebrow">LET THE GAMES BEGIN</div><h2>A bright idea, <i>isn't it?</i></h2><p>Watch the pixels clear, type the product name, and climb the leaderboard.</p></div><div class="collection-photos"><img src="/api/showcase/3" alt="Decorative Pooky lighting"><img src="/api/showcase/4" alt="Decorative Pooky lighting"><img src="/api/showcase/5" alt="Decorative Pooky lighting"></div></section>`;
 }
 function lobbyMarkup(){
   const youHost=state.you===state.host;
