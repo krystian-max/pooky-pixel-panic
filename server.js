@@ -69,7 +69,12 @@ const BANK = [
   ['Alvis','Alvis pendant in brass and chrome','alvis-pendant-in-brass-and-chrome','pendant'],
   ['Lolita','Larger Lolita table lamp in a stone glaze','lolita-table-lamp-in-a-stone-glaze','ceramic'],
 ].map(([family, name, handle, type]) => ({family, name, handle, type, url:`https://www.pooky.com/products/${handle}`, image:null, mime:null, photo:false,sku:null}));
-const VERIFIED_SKUS={Ernest:'TLRLEARBUN100BRABRA',Twinky:'RLTWI099BLABRA',Reed:'TLRLREEBUN100IROBNZ',Orlando:'TLRLORLBUN100ALUANS',Karnak:'TLRLKARBUN100BRAMAR'};
+const VERIFIED_SKUS={Ernest:'TLRLEARBUN100BRABRA',Twinky:'RLTWI099BLABRA',Reed:'TLRLREEBUN100IROBNZ',Orlando:'TLRLORLBUN100ALUANS',Karnak:'TLRLKARBUN100BRAMAR',Goodhew:'PLGOO100IROWHG',Daniella:'TLRLDANBUN100GLACLE',Vincent:'WLVIN100BRABRA'};
+for(const [family,name,handle,type,sku] of [
+ ['Oddjob','Oddjob pendant in antique brass','oddjob-pendant-in-antique-brass','pendant','PLODD100IROBRA'],
+ ['Flying Saucer','Flying saucer pendant in brass','flying-saucer-pendant-in-brass','pendant','PLFLY100BRABRA'],
+ ['Artemis','Artemis circular chandelier in brass','artemis-circular-chandelier-in-brass-with-glass-rods-and-frosted-glass-baffle','chandelier','CHART100BRAGLA']
+])BANK.push({family,name,handle,type,sku,url:'https://www.pooky.com/products/'+handle,image:null,mime:null,photo:false});
 for(const p of BANK)if(VERIFIED_SKUS[p.family])p.sku=VERIFIED_SKUS[p.family];
 
 function drawDemoSvg(item) {
@@ -107,7 +112,7 @@ function imageUrl(source){
 }
 async function hydrate(item){
   try {
-    let img=null;
+    let img=item.preview||null;
     // Shopify's public product endpoint is preferred; HTML Open Graph is a fallback.
     try {
       const response=await getRemote(`${item.url}.js`, 9000);
@@ -151,23 +156,30 @@ async function discoverProducts(){
     for(const p of data.products||[]){
       if(BANK.length>=130)break;
       if(!/lamp|light|pendant|chandelier|lantern|sconce/i.test(p.title||''))continue;
-      const family=String(p.title||'').trim().split(/\s+/)[0];
+      const family=String(p.title||'').trim().replace(/^(tiny|regular|smaller|larger|double|mini)\s+/i,'').split(/\s+/)[0];
       if(!/^[a-z][a-z-]{2,24}$/i.test(family)||names.has(family.toLowerCase()))continue;
       if(!p.handle||!p.images?.length)continue;
       const sku=String(p.variants?.[0]?.sku||'').trim();
-      const item={family,name:p.title,handle:p.handle,type:/pendant/i.test(p.title)?'pendant':/wall/i.test(p.title)?'wall':'table',url:'https://www.pooky.com/products/'+p.handle,image:null,mime:'image/svg+xml',photo:false,sku:/^[A-Za-z0-9_-]{5,40}$/.test(sku)?sku:null};
+      const item={family,name:p.title,handle:p.handle,type:/pendant/i.test(p.title)?'pendant':/wall/i.test(p.title)?'wall':'table',url:'https://www.pooky.com/products/'+p.handle,image:null,mime:'image/svg+xml',photo:false,preview:imageUrl(p.images?.[0]?.src),sku:/^[A-Za-z0-9_-]{5,40}$/.test(sku)?sku:null};
       item.image=drawDemoSvg(item);BANK.push(item);names.add(family.toLowerCase());
     }
     console.log('Catalogue expanded to',BANK.length,'unique Pooky families');
   }catch(e){console.log('Dynamic catalogue temporarily unavailable:',e.message);}
 }
 (async()=>{
+  const originalCount=BANK.length;
   await discoverProducts();
-  let i=0; async function worker(){while(i<BANK.length){const p=BANK[i++];await hydrate(p);}}
-  await Promise.all(Array.from({length:5},worker));
+  let i=0;
+  async function primaryWorker(){while(i<originalCount){await hydrate(BANK[i++]);}}
+  await Promise.all(Array.from({length:8},primaryWorker));
   loading=false;
-  console.log(`Catalogue ready. ${loadedPhotos}/${BANK.length} real Pooky photos.`);
+  console.log(`Catalogue playable. ${loadedPhotos}/${BANK.length} real Pooky photos.`);
   for (const r of rooms.values()) sendState(r);
+  // Newly discovered products continue loading in the background so hosts can start quickly.
+  let j=originalCount;
+  async function extraWorker(){while(j<BANK.length){await hydrate(BANK[j++]);}}
+  await Promise.all(Array.from({length:8},extraWorker));
+  for(const r of rooms.values())sendState(r);
 })();
 
 const token=()=>crypto.randomBytes(18).toString('hex');
@@ -345,7 +357,7 @@ async function handle(req,res){
   const imageMatch=pathname.match(/^\/api\/image\/([A-Z0-9]{5})\/(\d+)$/);
   if(req.method==='GET'&&imageMatch){
     const room=rooms.get(imageMatch[1]),i=Number(imageMatch[2]);
-    if(!room||!room.deck||i>room.round||i<0||i>=room.deck.length||!room.deck[i]){res.writeHead(404);return res.end('No image');}
+    if(!room||!room.deck||i>room.round||i<0||i>=room.deck.length||!room.deck[i]||(room.mode==='draw'&&room.phase!=='reveal')){res.writeHead(404);return res.end('No image');}
     const item=room.deck[i];res.writeHead(200,{'content-type':item.mime,'cache-control':'private, no-store','x-content-type-options':'nosniff'});return res.end(item.image);
   }
   if(req.method==='GET')return serveStatic(req,res,pathname);
