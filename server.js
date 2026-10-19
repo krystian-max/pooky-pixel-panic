@@ -69,7 +69,7 @@ const BANK = [
   ['Alvis','Alvis pendant in brass and chrome','alvis-pendant-in-brass-and-chrome','pendant'],
   ['Lolita','Larger Lolita table lamp in a stone glaze','lolita-table-lamp-in-a-stone-glaze','ceramic'],
 ].map(([family, name, handle, type]) => ({family, name, handle, type, url:`https://www.pooky.com/products/${handle}`, image:null, mime:null, photo:false,sku:null}));
-const VERIFIED_SKUS={Ernest:'TLRLEARBUN100BRABRA',Twinky:'RLTWI099BLABRA',Reed:'TLRLREEBUN100IROBNZ',Orlando:'TLRLORLBUN100ALUANS',Karnak:'TLRLKARBUN100BRAMAR',Goodhew:'PLGOO100IROWHG',Daniella:'TLRLDANBUN100GLACLE',Vincent:'WLVIN100BRABRA'};
+const VERIFIED_SKUS={Ernest:'TLRLEARBUN100BRABRA',Twinky:'RLTWI099BLABRA',Reed:'TLRLREEBUN100IROBNZ',Orlando:'TLRLORLBUN100ALUANS',Karnak:'TLRLKARBUN100BRAMAR',Goodhew:'PLGOO100IROWHG',Daniella:'TLRLDANBUN100GLACLE',Vincent:'WLVIN100BRABRA',Utopia:'RLUTP100MARBRA',Harlequin:'PLHLQ100STRNAT',Lolita:'TLLTA099CERSTO',Scoon:'TLRLSCO100IROCRM'};
 for(const [family,name,handle,type,sku] of [
  ['Oddjob','Oddjob pendant in antique brass','oddjob-pendant-in-antique-brass','pendant','PLODD100IROBRA'],
  ['Flying Saucer','Flying saucer pendant in brass','flying-saucer-pendant-in-brass','pendant','PLFLY100BRABRA'],
