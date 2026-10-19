@@ -233,26 +233,52 @@ function endRound(room){
   room.history.push({round:room.round+1,answer:item.name,winner:first?room.players.find(p=>p.id===first.playerId)?.name||null:null,placements:(room.roundPlacements||[]).map(p=>({...p})),productUrl:item.url||null});
   room.revealUntil=Date.now()+REVEAL_MS;
   sendState(room);
-  room.nextTimer=setTimeout(()=>{if(!rooms.has(room.code))return;if(room.round>=ROUND_COUNT-1){room.phase='finished';sendState(room);}else startRound(room);},REVEAL_MS);
+  room.nextTimer=setTimeout(()=>{if(!rooms.has(room.code))return;if(room.round>=totalRounds(room)-1){room.phase='finished';sendState(room);}else startRound(room);},REVEAL_MS);
+}
+function beginDrawing(room,index){
+  if(room.phase!=='choosing')return;
+  clearTimeout(room.roundTimer);
+  const chosen=room.choices[index]||room.choices[0];
+  room.deck[room.round]=chosen;
+  room.used.add(identity(chosen));
+  room.phase='playing';
+  room.drawLines=[];
+  room.endsAt=Date.now()+DRAW_MS;
+  room.roundTimer=setTimeout(()=>endRound(room),DRAW_MS);
+  sendState(room);
 }
 function startRound(room){
   cancelTimers(room);
   room.round++;
-  room.phase='playing'; room.endsAt=Date.now()+ROUND_MS;
-  room.roundWinner=null; room.roundPlacements=[];room.guessEvent=null;
+  room.roundWinner=null;room.roundPlacements=[];room.guessEvent=null;room.drawLines=[];
   room.players.forEach(p=>{p.roundPlace=0;p.roundPoints=0;p.lastGuess=0;});
   room.revealOrder=shuffle(Array.from({length:12},(_,i)=>i));
-  room.roundTimer=setTimeout(()=>endRound(room),ROUND_MS);
+  if(room.mode==='draw'){
+    room.artistId=room.drawOrder[room.round];
+    room.choices=shuffle(freshProducts(room)).slice(0,3);
+    if(!room.choices.length){room.phase='finished';sendState(room);return;}
+    room.phase='choosing';room.endsAt=Date.now()+CHOOSE_MS;
+    room.roundTimer=setTimeout(()=>beginDrawing(room,0),CHOOSE_MS);
+  }else{
+    room.phase='playing';room.endsAt=Date.now()+ROUND_MS;
+    room.roundTimer=setTimeout(()=>endRound(room),ROUND_MS);
+  }
   sendState(room);
 }
 function startGame(room){
   cancelTimers(room);
   room.players.forEach(p=>{p.score=0;p.wins=0;p.lastGuess=0;p.roundPlace=0;p.roundPoints=0;});
-  const available=freshProducts(room);
-  if(available.length<ROUND_COUNT)throw Error(`Only ${available.length} unseen products remain. At least ${ROUND_COUNT} are needed. Reset product history to start over.`);
-  room.deck=shuffle(available).slice(0,ROUND_COUNT).map(item=>({...item}));
-  for(const item of room.deck)room.used.add(identity(item));
-  room.gameId=token().slice(0,8); room.history=[];room.round=-1;room.phase='playing';room.guessSeq=0;room.guessEvent=null;room.roundPlacements=[];
+  if(room.mode==='draw'){
+    const first=shuffle(room.players.map(p=>p.id)),second=shuffle(room.players.map(p=>p.id));
+    if(first.length>1&&first[first.length-1]===second[0]){const t=second[0];second[0]=second[1];second[1]=t;}
+    room.drawOrder=[...first,...second];
+  }else room.drawOrder=[];
+  const needed=requiredProducts(room),available=freshProducts(room);
+  if(available.length<needed)throw Error('Not enough fresh products to start this mode.');
+  room.deck=room.mode==='draw'?new Array(needed).fill(null):shuffle(available).slice(0,needed);
+  if(room.mode!=='draw')for(const item of room.deck)room.used.add(identity(item));
+  room.gameId=token().slice(0,8);room.history=[];room.round=-1;
+  room.guessSeq=0;room.guessEvent=null;room.roundPlacements=[];room.artistId=null;
   startRound(room);
 }
 function fail(res,err,status=400){reply(res,{ok:false,error:err},status);}
@@ -285,10 +311,19 @@ async function handle(req,res){
     res.writeHead(200,{'content-type':item.mime,'cache-control':'public, max-age=60','x-content-type-options':'nosniff'});
     return res.end(item.image);
   }
+  // Only the nominated artist can view the three private product choices.
+  if(req.method==='GET'&&pathname.startsWith('/api/choice-image/')){
+    const pieces=pathname.split('/'),key=pieces[3],index=Number(pieces[4]);
+    const room=rooms.get(key),access=playerFor(u.searchParams.get('token'));
+    if(!room||!access||access.room!==room||room.mode!=='draw'||room.phase!=='choosing'||access.player.id!==room.artistId)return fail(res,'Artist-only preview',403);
+    const item=room.choices?.[index];if(!item)return fail(res,'Missing product',404);
+    res.writeHead(200,{'content-type':item.mime,'cache-control':'private,no-store'});
+    return res.end(item.image);
+  }
   const imageMatch=pathname.match(/^\/api\/image\/([A-Z0-9]{5})\/(\d+)$/);
   if(req.method==='GET'&&imageMatch){
     const room=rooms.get(imageMatch[1]),i=Number(imageMatch[2]);
-    if(!room||!room.deck||i>room.round||i<0||i>=room.deck.length){res.writeHead(404);return res.end('No image');}
+    if(!room||!room.deck||i>room.round||i<0||i>=room.deck.length||!room.deck[i]){res.writeHead(404);return res.end('No image');}
     const item=room.deck[i];res.writeHead(200,{'content-type':item.mime,'cache-control':'private, no-store','x-content-type-options':'nosniff'});return res.end(item.image);
   }
   if(req.method==='GET')return serveStatic(req,res,pathname);
@@ -364,6 +399,27 @@ async function handle(req,res){
     // Never finish a round because of a correct answer: all 45 seconds must elapse.
     sendState(room);
     return reply(res,{ok:true,correct,place,points});
+  }
+  if(pathname==='/api/select-product'){
+    if(room.mode!=='draw'||room.phase!=='choosing'||player.id!==room.artistId)return fail(res,'Only the current artist can choose.');
+    const index=Number(b.choice);
+    if(!Number.isInteger(index)||index<0||index>=room.choices.length)return fail(res,'Invalid product choice.');
+    beginDrawing(room,index);return reply(res,{ok:true});
+  }
+  if(pathname==='/api/draw'){
+    if(room.mode!=='draw'||room.phase!=='playing'||player.id!==room.artistId)return fail(res,'Only the artist can draw.');
+    if(b.clear){
+      room.drawLines=[];
+      for(const p of room.players){const stream=streams.get(p.token);if(stream)sseWrite(stream,{type:'draw_clear',round:room.round});}
+      return reply(res,{ok:true});
+    }
+    const raw=Array.isArray(b.lines)?b.lines.slice(0,40):[];
+    const lines=raw.filter(v=>Array.isArray(v)&&v.length===6&&v.slice(0,4).every(n=>Number.isFinite(n)&&n>=0&&n<=1)&&typeof v[4]==='string'&&/^#[0-9a-f]{6}$/i.test(v[4])&&Number.isFinite(v[5])&&v[5]>=1&&v[5]<=24);
+    if(!lines.length)return fail(res,'No valid segments.');
+    room.drawLines.push(...lines);
+    if(room.drawLines.length>6000)room.drawLines.splice(0,room.drawLines.length-6000);
+    for(const p of room.players){const stream=streams.get(p.token);if(stream)sseWrite(stream,{type:'draw_lines',round:room.round,lines});}
+    return reply(res,{ok:true});
   }
   if(pathname==='/api/upload'){
     if(player.id!==room.host)return fail(res,'Only the host can upload images.');
