@@ -255,6 +255,16 @@ async function handle(req,res){
     req.on('close',()=>{clearInterval(keep);if(streams.get(tok)===res){streams.delete(tok);p.player.online=false;sendState(p.room);}});
     return;
   }
+  // Decorative homepage preview images: these are outside any match and reveal no answer.
+  // Keep a consistent set of colourful real Pooky photographs where available.
+  const showcase=pathname.match(/^\/api\/showcase\/(\d)$/);
+  if(req.method==='GET'&&showcase){
+    const names=['Ellie','Lillee','Daniella','Murphy','Lolita','Freya'];
+    const item=BANK.find(p=>p.family===names[Number(showcase[1])]);
+    if(!item){res.writeHead(404);return res.end('No image');}
+    res.writeHead(200,{'content-type':item.mime,'cache-control':'public, max-age=60','x-content-type-options':'nosniff'});
+    return res.end(item.image);
+  }
   const imageMatch=pathname.match(/^\/api\/image\/([A-Z0-9]{5})\/(\d+)$/);
   if(req.method==='GET'&&imageMatch){
     const room=rooms.get(imageMatch[1]),i=Number(imageMatch[2]);
