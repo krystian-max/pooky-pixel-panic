@@ -114,7 +114,7 @@ async function hydrate(item){
       if(response.ok){
         const product=await response.json();
         img=imageUrl(product.featured_image || product.images?.[0]);
-        const sku=String(product.variants?.find(v=>v.available)?.sku||product.variants?.[0]?.sku||'').trim();
+        const sku=String(product.variants?.[0]?.sku||'').trim();
         if(/^[A-Za-z0-9_-]{5,40}$/.test(sku))item.sku=sku;
       }
     }catch{}
@@ -141,7 +141,28 @@ async function hydrate(item){
     console.log('✓',item.family,'photo loaded');
   } catch(e) {console.log('·',item.family,'using illustrated fallback:',e.message);}
 }
+async function discoverProducts(){
+  // Expand the catalogue with current UK Pooky product data when Shopify provides it.
+  try{
+    const response=await getRemote('https://www.pooky.com/products.json?limit=250',7500);
+    if(!response.ok)return;
+    const data=await response.json();
+    const names=new Set(BANK.map(p=>String(p.family).toLowerCase()));
+    for(const p of data.products||[]){
+      if(BANK.length>=130)break;
+      if(!/lamp|light|pendant|chandelier|lantern|sconce/i.test(p.title||''))continue;
+      const family=String(p.title||'').trim().split(/\s+/)[0];
+      if(!/^[a-z][a-z-]{2,24}$/i.test(family)||names.has(family.toLowerCase()))continue;
+      if(!p.handle||!p.images?.length)continue;
+      const sku=String(p.variants?.[0]?.sku||'').trim();
+      const item={family,name:p.title,handle:p.handle,type:/pendant/i.test(p.title)?'pendant':/wall/i.test(p.title)?'wall':'table',url:'https://www.pooky.com/products/'+p.handle,image:null,mime:'image/svg+xml',photo:false,sku:/^[A-Za-z0-9_-]{5,40}$/.test(sku)?sku:null};
+      item.image=drawDemoSvg(item);BANK.push(item);names.add(family.toLowerCase());
+    }
+    console.log('Catalogue expanded to',BANK.length,'unique Pooky families');
+  }catch(e){console.log('Dynamic catalogue temporarily unavailable:',e.message);}
+}
 (async()=>{
+  await discoverProducts();
   let i=0; async function worker(){while(i<BANK.length){const p=BANK[i++];await hydrate(p);}}
   await Promise.all(Array.from({length:5},worker));
   loading=false;
