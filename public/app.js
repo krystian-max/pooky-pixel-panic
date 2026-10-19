@@ -73,6 +73,8 @@ function connectEvents(){
   source=new EventSource('/api/events?token='+encodeURIComponent(token));
   source.onmessage=(event)=>{try{
     const newState=JSON.parse(event.data);
+    if(newState.type==='draw_lines'){if(state?.mode==='draw'&&newState.round===state.round-1)paintLines(newState.lines);return;}
+    if(newState.type==='draw_clear'){if(state?.mode==='draw'&&newState.round===state.round-1)clearDrawing();return;}
     if(newState.type==='room_closed'){
       persistUsed(newState.usedFamilies);
       resetToHome();
@@ -152,6 +154,60 @@ function lobbyMarkup(){
     </section>`;
 }
 const playerScoreMarkup=(p,i)=>`<div class="scorebox ${i===0?'leader':''} ${p.id===state.you?'your-score':''}" data-player-id="${escapeHtml(p.id)}"><span class="score-rank">#${i+1}</span><span class="avatar">${escapeHtml(p.name[0].toUpperCase())}</span><div class="score-content"><div class="score-name">${escapeHtml(p.name)}${p.id===state.you?' (you)':''}</div><div class="score-points">${p.score.toLocaleString('en-GB')}</div><div class="round-rank">${p.roundPlace?`${ordinal(p.roundPlace)} · +${p.roundPoints}`:'Still guessing'}</div></div></div>`;
+
+let drawingBatch=[],drawingTimer=null,drawPaintColor='#202020',drawPaintWidth=6;
+function paintLines(lines){
+  const canvas=$('#draw-canvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d');ctx.lineCap='round';ctx.lineJoin='round';
+  for(const a of lines||[]){ctx.strokeStyle=a[4];ctx.lineWidth=a[5];ctx.beginPath();ctx.moveTo(a[0]*800,a[1]*800);ctx.lineTo(a[2]*800,a[3]*800);ctx.stroke();}
+}
+function clearDrawing(){
+  const canvas=$('#draw-canvas');if(!canvas)return;const c=canvas.getContext('2d');
+  c.fillStyle='#fffdf7';c.fillRect(0,0,800,800);
+}
+function flushDrawing(){
+  drawingTimer=null;
+  if(!drawingBatch.length)return;
+  const segments=drawingBatch.splice(0,40);
+  api('draw',{lines:segments}).catch(()=>{});
+  if(drawingBatch.length)drawingTimer=setTimeout(flushDrawing,45);
+}
+function initDrawingCanvas(){
+  const canvas=$('#draw-canvas');if(!canvas)return;
+  clearDrawing();paintLines(state.drawLines||[]);
+  if(state.artistId!==state.you||state.phase!=='playing')return;
+  let last=null;
+  const point=event=>{const b=canvas.getBoundingClientRect();return [Math.max(0,Math.min(1,(event.clientX-b.left)/b.width)),Math.max(0,Math.min(1,(event.clientY-b.top)/b.height))];};
+  canvas.onpointerdown=event=>{if(event.button!==0&&event.pointerType==='mouse')return;last=point(event);canvas.setPointerCapture(event.pointerId);event.preventDefault();};
+  canvas.onpointermove=event=>{
+    if(!last)return;
+    const next=point(event),line=[last[0],last[1],next[0],next[1],drawPaintColor,drawPaintWidth];last=next;
+    paintLines([line]);drawingBatch.push(line);
+    if(!drawingTimer)drawingTimer=setTimeout(flushDrawing,65);
+  };
+  canvas.onpointerup=canvas.onpointercancel=()=>{last=null;if(drawingTimer){clearTimeout(drawingTimer);flushDrawing();}};
+  document.querySelectorAll('.draw-swatch').forEach(el=>el.onclick=()=>{drawPaintColor=el.dataset.color;document.querySelectorAll('.draw-swatch').forEach(n=>n.classList.toggle('selected',n===el));});
+  const thickness=$('#draw-width');if(thickness)thickness.oninput=()=>{drawPaintWidth=Number(thickness.value)||6;};
+  const clear=$('#draw-clear');if(clear)clear.onclick=()=>safe(async()=>{await api('draw',{clear:true});clearDrawing();});
+}
+function drawingMarkup(){
+  const selecting=state.phase==='choosing',revealed=state.phase==='reveal',isArtist=state.you===state.artistId;
+  const ordered=[...state.players].sort((a,b)=>b.score-a.score||b.wins-a.wins);
+  const choices=isArtist?(state.choices||[]).map((item,i)=>`<button class="draw-choice" data-choice="${i}"><img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.family)}"><b>${escapeHtml(item.family)}</b></button>`).join(''):'';
+  const workspace=selecting?`<div class="draw-choose"><h3>${isArtist?'Choose a lamp to draw':'Picking a product...'}</h3><p>${isArtist?'Only you can see the three options. Choose one, then start sketching!':escapeHtml(state.artistName||'The artist')+' is choosing from three mystery products.'}</p><div class="draw-choices">${choices}</div></div>`
+    :`<div class="draw-board"><canvas id="draw-canvas" width="800" height="800" aria-label="Live Pooky drawing canvas"></canvas>
+      ${revealed&&state.image?`<div class="draw-final-image"><img src="${escapeHtml(state.image)}" alt="The revealed Pooky lamp"/><div class="image-answer-bubble"><span>It's…</span><strong>${escapeHtml(state.answerFamily||'')}</strong></div></div>`:''}</div>`;
+  const tools=isArtist&&!selecting&&!revealed?`<div class="draw-tools"><strong>Your drawing: ${escapeHtml(state.artistPrompt||'a mystery lamp')}</strong><div class="draw-colours">${['#202020','#db5d42','#187fa3','#478b55','#ecb52d','#a65aab'].map(c=>`<button class="draw-swatch ${c==='#202020'?'selected':''}" data-color="${c}" style="background:${c}" aria-label="Pen colour ${c}"></button>`).join('')}</div><label>Pen <input type="range" id="draw-width" min="2" max="24" value="6"></label><button id="draw-clear" class="btn btn-white">Clear canvas</button></div>`:'';
+  const guessForm=!selecting&&!revealed&&!isArtist?`<form class="guess-form" id="guess-form"><input id="guess-input" class="field guess-field" placeholder="Type the product family name…" maxlength="90" autocomplete="off" required><button class="btn btn-primary" type="submit">Submit guess ↗</button></form>`:'';
+  const reveal=revealed?`<div class="compact-round-summary"><strong>${escapeHtml(state.answerFamily||'')}</strong><p>${(state.placements||[]).map(p=>ordinal(p.place)+' '+escapeHtml(p.name)+' · +'+p.points).join(' / ')||'No correct guesses this round'}</p></div>`:'';
+  return `<section class="game drawing-game"><div class="game-heading"><div><div class="round-kicker">POOKY PICTIONARY · ${escapeHtml(state.artistName||'')}</div><h2 class="game-title">Drawing ${state.round} / ${state.total}</h2></div><span class="draw-turn-label">${isArtist?'✎ YOUR TURN TO DRAW':'✎ GUESS THE LAMP'}</span></div>
+    <div class="game-workspace"><div class="stage"><div class="image-stage drawing-stage">${workspace}</div><div class="aside">
+      <div class="timer-card"><div class="timer-head"><span>${selecting?'CHOOSING A PRODUCT':revealed?'ROUND COMPLETE':'DRAWING TIME'}</span><span>${selecting?'15':'30'} SECONDS</span></div><div class="timer-num" id="timer-num">30<span>SEC</span></div><div class="progress-rail"><div class="progress-fill" id="timer-fill"></div></div></div>
+      <div class="guess-card"><h3>${isArtist?'Make it recognisable!':'Can you name it?'}</h3><p>${isArtist?'Draw the lamp and help your colleagues score points. Every correct guess earns you an artist bonus.':'Watch the drawing appear live. You get points for guessing the family name correctly.'}</p>${guessForm}${tools}${reveal}</div>
+    </div></div>
+    <aside class="leaderboard-panel"><h3 class="leaderboard-heading">THE LEADERBOARD ✺</h3><p class="leaderboard-caption">LIVE RANKINGS</p><div class="scoreboard">${ordered.map((p,i)=>playerScoreMarkup(p,i)).join('')}</div></aside></div></section>`;
+}
+
 function gameMarkup(){
   const isReveal=state.phase==='reveal',place=state.placements||[];
   const answer=isReveal?`<div class="round-result compact-round-summary"><strong>Round finished!</strong><p>${place.length?place.map(p=>`${ordinal(p.place)}: ${escapeHtml(p.name)} (+${p.points})`).join(' · '):'No correct guesses this round.'}</p>${state.productUrl?`<a href="${escapeHtml(state.productUrl)}" target="_blank" rel="noopener noreferrer">View product on Pooky ↗</a>`:''}</div>`:'';
@@ -187,7 +243,7 @@ function render(force=false){
   if(view==='intro')app.innerHTML=introMarkup();
   else if(view==='lobby')app.innerHTML=lobbyMarkup();
   else if(view==='finished')app.innerHTML=endMarkup();
-  else {app.innerHTML=gameMarkup();mountImage();}
+  else {app.innerHTML=state.mode==='draw'?drawingMarkup():gameMarkup();if(state.mode==='draw')initDrawingCanvas();else mountImage();}
   if(state){
     const isHost=state.you===state.host;
     app.insertAdjacentHTML('afterbegin',`<nav class="session-toolbar" aria-label="Game controls"><span class="session-label">Room ${escapeHtml(state.code)}</span><button type="button" class="btn btn-white exit-room-button">${isHost?'✕ Cancel game & return to menu':'← Leave game & return to menu'}</button></nav>`);
@@ -210,6 +266,7 @@ function attachEvents(view){
     const custom=$('#use-custom');if(custom)custom.onchange=()=>safe(async()=>{await api('catalogue',{custom:custom.checked});toast(custom.checked?'Your photos selected.':'Pooky catalogue selected.');});
   }
   if(view==='game'){
+    document.querySelectorAll('.draw-choice').forEach(el=>el.onclick=()=>safe(async()=>{await api('select-product',{choice:Number(el.dataset.choice)});}));
     const form=$('#guess-form');if(form)form.onsubmit=e=>{e.preventDefault();const input=$('#guess-input');const guess=input.value.trim();if(!guess)return;const button=$('button',form);button.disabled=true;safe(async()=>{try{const result=await api('guess',{guess});if(result.alreadyCorrect)toast('You already got this product!');}finally{if(state?.phase==='playing'){input.value='';updateScores();if(!button.disabled){input.focus({preventScroll:true});}}}});};
   }
   if(view==='lobby'||view==='finished'){
